@@ -1,0 +1,746 @@
+#include <stdio.h>
+#include <string.h>
+
+#include <chrono>
+#include <filesystem>
+#include <string>
+#include <thread>
+#include <queue>
+#include <tuple>
+#include <functional>
+#include <mutex>
+#include <condition_variable>
+
+#include <lua.hpp>
+
+#include <SDL.h>
+#include <SDL_mixer.h>
+
+#include "core/allocator.h"
+#include "core/act_lua.h"
+
+#include "core/instream.h"
+#include "core/pngload.h"
+#include "core/sound.h"
+
+#include "core/button.h"
+#include "core/button_lua.h"
+#include "core/keyboard.h"
+#include "core/keyboard_lua.h"
+#include "core/lua_extra.h"
+
+#include "core/texture.h"
+#include "core/glyph.h"
+
+#include "asset/luaasset.h"
+#include "asset/asset_lua.h"
+#include "asset/lua_extra_asset.h"
+#include "asset/texture_lua.h"
+#include "asset/glyph_lua.h"
+#include "asset/sound_lua.h"
+#include "asset/font_lua.h"
+#include "asset/data_lua.h"
+#include "asset/bind/texture_binder.hpp"
+#include "asset/bind/texture_lua_load.h"
+#include "asset/bind/glyph_binder.hpp"
+#include "asset/bind/glyph_lua_load.h"
+#include "asset/bind/sound_binder.hpp"
+#include "asset/bind/sound_lua_load.h"
+#include "asset/bind/font_binder.hpp"
+#include "asset/bind/font_lua_load.h"
+#include "asset/bind/data_binder.hpp"
+#include "asset/bind/data_lua_load.h"
+
+#include "asset/util/multi_dispatch.hpp"
+
+#include "render/luarendernode.h"
+#include "render/render_lua.h"
+#include "render/renderlist.h"
+#include "render/renderlist_lua.h"
+#include "render/sprite.h"
+#include "render/sprite_lua.h"
+#include "render/primrect.h"
+#include "render/primrect_lua.h"
+
+#include "appconfig.h"
+
+static int luagetmousecoords(lua_State *L){
+    int x;
+    int y;
+
+    SDL_GetMouseState(&x, &y);
+
+    lua_pushinteger(L, x);
+    lua_pushinteger(L, y);
+
+    return 2;
+}
+
+static int luagetmousepressed(lua_State *L){
+    lua_pushboolean(
+        L,
+        (SDL_GetMouseState(NULL, NULL) | SDL_BUTTON_LMASK) != 0
+    );
+
+    return 1;
+}
+
+static int luasetquit(lua_State *L){
+    int *quit = (int *)lua_touserdata(L, lua_upvalueindex(1));
+    *quit = 1;
+
+    return 0;
+}
+
+static int lualoadpref(lua_State *L){
+    lua_settop(L, 1);
+    if(!lua_isstring(L, 1)){
+        return 0;
+    }
+    lua_pushvalue(L, lua_upvalueindex(1));
+    lua_pushvalue(L, 1);
+    lua_concat(L, 2);
+
+    FILE *f = fopen(lua_tostring(L, 2), "rb");
+    if(!f){
+        lua_pushliteral(L, "");
+        return 1;
+    }
+
+    fseek(f, 0, SEEK_END);
+    size_t sz = (size_t)ftell(f);
+    rewind(f);
+
+    char *buf = (char *)malloc(sz);
+    fread(buf, 1, sz, f);
+    lua_pushlstring(L, buf, sz);
+
+    free(buf);
+    fclose(f);
+
+    return 1;
+}
+
+static int luasavepref(lua_State *L){
+    lua_settop(L, 2);
+    if(!lua_isstring(L, 1) || !lua_isstring(L, 2)){
+        return 0;
+    }
+    lua_pushvalue(L, lua_upvalueindex(1));
+    lua_pushvalue(L, 1);
+    lua_concat(L, 2);
+    lua_pushvalue(L, 3);
+    lua_pushliteral(L, "~");
+    lua_concat(L, 2);
+
+    const char *dstfile = lua_tostring(L, 3);
+    const char *tmpfile = lua_tostring(L, 4);
+
+    FILE *f = fopen(tmpfile, "wb");
+    if(!f){
+        return 0;
+    }
+    size_t sz;
+    const char *data = lua_tolstring(L, 2, &sz);
+
+    fwrite(data, 1, sz, f);
+    fclose(f);
+
+    //Replace old destination file with temp file
+    remove(dstfile);
+    rename(tmpfile, dstfile);
+
+    return 0;
+}
+
+typedef struct maindata{
+    std::filesystem::path basepath;
+    std::filesystem::path prefpath;
+
+    lua_State *L;
+
+    SDL_Window *wind;
+    SDL_Renderer *rend;
+    SDL_Texture **texarr;
+
+    Enj_Glyph *glyphs;
+    Enj_Sound *sounds;
+
+    size_t numtextures;
+    size_t numglyphs;
+    size_t numsounds;
+
+    void *buf;
+    Enj_Allocator allo;
+    Enj_PoolAllocatorData dat;
+
+    void *bufpr;
+    Enj_Allocator allopr;
+    Enj_PoolAllocatorData datpr;
+
+    void *bufb;
+    Enj_Allocator allob;
+    Enj_PoolAllocatorData datb;
+    Enj_ButtonList buttons;
+
+    void *bufk;
+    Enj_Allocator allok;
+    Enj_PoolAllocatorData datk;
+    Enj_KeyboardList keyboards;
+
+    void *bufrl;
+    Enj_Allocator allorl;
+    Enj_PoolAllocatorData datrl;
+
+    void *bufrn;
+    Enj_Allocator allorn;
+    Enj_PoolAllocatorData datrn;
+
+    Enj_RenderList renderlist;
+
+} maindata;
+
+
+
+static int loadsounds(maindata *mdatap, const char *path);
+
+static void startscript(lua_State *L, const char *name);
+
+
+
+
+#define MAX_ASSETS (1<<12)
+
+#define MAX_SPRITES 1024
+
+
+
+
+typedef struct glyphctx{
+    void *buf;
+    Enj_Allocator alloc;
+    Enj_PoolAllocatorData dat;
+
+    lua_State *Lmain;
+} glyphctx;
+
+int luadofilebasepath_cont(lua_State *L, int status, lua_KContext ctx);
+int luadofilebasepath(lua_State *L){
+    lua_settop(L, 1);
+    lua_pushvalue(L, lua_upvalueindex(1));
+    lua_rotate(L, 1, 1);
+
+    if(lua_isstring(L, 2)){
+        lua_pushvalue(L, lua_upvalueindex(2));
+        lua_pushvalue(L, 2);
+        lua_concat(L, 2);
+        lua_copy(L, 3, 2);
+        lua_pop(L, 1);
+    }
+
+    lua_callk(L, 1, LUA_MULTRET, 0, luadofilebasepath_cont);
+    return luadofilebasepath_cont(L, LUA_OK, 0);
+}
+int luadofilebasepath_cont(lua_State *L, int status, lua_KContext ctx){
+    return lua_gettop(L);
+}
+
+int lualoadfilebasepath(lua_State *L){
+    lua_settop(L, 3);
+    lua_pushvalue(L, lua_upvalueindex(1));
+    lua_rotate(L, 1, 1);
+
+    if(lua_isstring(L, 2)){
+        lua_pushvalue(L, lua_upvalueindex(2));
+        lua_pushvalue(L, 2);
+        lua_concat(L, 2);
+        lua_copy(L, 5, 2);
+        lua_pop(L, 1);
+    }
+
+    lua_call(L, 3, LUA_MULTRET);
+    return lua_gettop(L);
+}
+
+
+
+int main(int argc, char **argv){
+    int ecode = 0;
+
+    maindata mdata;
+    int isquit = 0;
+    std::chrono::high_resolution_clock::time_point start;
+
+    SDL_Init(SDL_INIT_EVERYTHING);
+
+    char *cwd = SDL_GetBasePath();
+    mdata.basepath = std::filesystem::path(cwd);
+    SDL_free(cwd);
+
+    char *prefd = SDL_GetPrefPath(APP_COMPANY, APP_NAME);
+    mdata.prefpath = std::filesystem::path(prefd);
+    SDL_free(prefd);
+
+    mdata.wind = SDL_CreateWindow(
+        APP_NAME,
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        1024,
+        768,
+        0
+    );
+    SDL_RaiseWindow(mdata.wind);
+
+
+    mdata.rend = SDL_CreateRenderer(
+        mdata.wind,
+        -1,
+        SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC
+    );
+    SDL_SetRenderDrawColor(mdata.rend,
+                0,
+                0,
+                0,
+                255);
+    SDL_RenderClear(mdata.rend);
+    SDL_RenderPresent(mdata.rend);
+
+    SDL_RendererInfo info;
+    SDL_GetRendererInfo(mdata.rend, &info);
+
+
+    Mix_Init(0);
+    //44100 Hz, default format, stereo, 2048 chunk size
+    Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
+    Mix_AllocateChannels(16);
+
+
+
+    mdata.L = luaL_newstate();
+
+    luaL_requiref(mdata.L, "basic", luaopen_base, 0);
+    luaL_requiref(mdata.L, "math", luaopen_math, 0);
+    luaL_requiref(mdata.L, "string", luaopen_string, 0);
+    luaL_requiref(mdata.L, "table", luaopen_table, 0);
+    luaL_requiref(mdata.L, "utf8", luaopen_utf8, 0);
+    lua_settop(mdata.L, 0);
+
+    luaL_requiref(mdata.L, "package", luaopen_package, 0);
+    //Set module search path
+    lua_pushstring(mdata.L,
+    (
+        (mdata.basepath/"modules"/"?.lua").generic_string()
+        + ';'
+        + (mdata.basepath/"modules"/"?.lc").generic_string()
+    ).c_str());
+    lua_setfield(mdata.L, 1, "path");
+
+    //Delete c library loader + all-in-one loader
+    lua_getfield(mdata.L, 1, "searchers");
+    lua_pushnil(mdata.L);
+    lua_seti(mdata.L, 2, 4);
+    lua_pushnil(mdata.L);
+    lua_seti(mdata.L, 2, 3);
+
+    //Delete loadlib function
+    lua_pushnil(mdata.L);
+    lua_setfield(mdata.L, 1, "loadlib");
+    lua_settop(mdata.L, 0);
+
+
+    //Make dofile, loadfile work with base path
+    lua_getglobal(mdata.L, "dofile");
+    lua_pushstring(mdata.L, mdata.basepath.generic_string().c_str());
+    lua_pushcclosure(mdata.L, luadofilebasepath, 2);
+    lua_setglobal(mdata.L, "dofile");
+
+    lua_getglobal(mdata.L, "loadfile");
+    lua_pushstring(mdata.L, mdata.basepath.generic_string().c_str());
+    lua_pushcclosure(mdata.L, lualoadfilebasepath, 2);
+    lua_setglobal(mdata.L, "loadfile");
+
+    //Pref file functions with pref path
+    lua_pushstring(mdata.L, mdata.prefpath.generic_string().c_str());
+    lua_pushcclosure(mdata.L, lualoadpref, 1);
+    lua_setglobal(mdata.L, "load_pref");
+
+    lua_pushstring(mdata.L, mdata.prefpath.generic_string().c_str());
+    lua_pushcclosure(mdata.L, luasavepref, 1);
+    lua_setglobal(mdata.L, "save_pref");
+
+    initbuiltins(mdata.L);
+
+    //Make grid of renderlist
+    mdata.bufrl = malloc(sizeof(Enj_RenderList)*MAX_SPRITES);
+    Enj_InitPoolAllocator(&mdata.allorl, &mdata.datrl, mdata.bufrl, sizeof(Enj_RenderList)*MAX_SPRITES, sizeof(Enj_RenderList));
+    mdata.bufrn = malloc(sizeof(Enj_RenderNode)*MAX_SPRITES);
+    Enj_InitPoolAllocator(&mdata.allorn, &mdata.datrn, mdata.bufrn, sizeof(Enj_RenderNode)*MAX_SPRITES, sizeof(Enj_RenderNode));
+
+    Enj_RenderListInit(&mdata.renderlist, &mdata.allorn);
+    bindrender(mdata.L);
+
+    //Make grid of sprites
+    mdata.buf = malloc(sizeof(Enj_Sprite)*MAX_SPRITES);
+    Enj_InitPoolAllocator(&mdata.allo, &mdata.dat, mdata.buf, sizeof(Enj_Sprite)*MAX_SPRITES, sizeof(Enj_Sprite));
+    bindsprite(mdata.L, &mdata.renderlist, mdata.rend, &mdata.allo);
+    //Make grid of rects
+    mdata.bufpr = malloc(sizeof(Enj_PrimRect)*MAX_SPRITES);
+    Enj_InitPoolAllocator(&mdata.allopr, &mdata.datpr, mdata.bufpr, sizeof(Enj_PrimRect)*MAX_SPRITES, sizeof(Enj_PrimRect));
+    bindprimrect(mdata.L, &mdata.renderlist, mdata.rend, &mdata.allopr);
+
+    bindrenderlist(mdata.L, &mdata.renderlist, mdata.rend,
+        &mdata.allorl, &mdata.allorn, &mdata.allo, &mdata.allopr);
+
+    //GUI button
+    mdata.bufb = malloc(64*128);
+    Enj_InitPoolAllocator(&mdata.allob, &mdata.datb, mdata.bufb, 64*128, sizeof(Enj_Button));
+    Enj_InitButtonList(&mdata.buttons, &mdata.allob);
+    bindbutton(mdata.L, &mdata.buttons);
+
+    //GUI keyboard
+    mdata.bufk = malloc(64*128);
+    Enj_InitPoolAllocator(&mdata.allok, &mdata.datk, mdata.bufk, 64*128, sizeof(Enj_Keyboard));
+    Enj_InitKeyboardList(&mdata.keyboards, &mdata.allok);
+    bindkeyboard(mdata.L, &mdata.keyboards);
+
+    mdata.texarr =
+        (SDL_Texture **)malloc(sizeof(SDL_Texture *) * MAX_ASSETS);
+    mdata.numtextures = 0;
+    mdata.glyphs =
+        (Enj_Glyph *)malloc(sizeof(Enj_Glyph) * MAX_ASSETS);
+    mdata.numglyphs = 0;
+    mdata.sounds =
+        (Enj_Sound *)malloc(sizeof(Enj_Sound) * MAX_ASSETS);
+    mdata.numsounds = 0;
+
+    multi_dispatch md;
+    bool workeractive = true;
+
+    std::thread worker([&md, &workeractive](){
+        while(true){
+
+            std::unique_lock lock(md.wq.mtx);
+
+            while(md.wq.q.empty() & workeractive)
+                md.cv.wait(lock);
+
+            if(!workeractive) return;
+            std::function<void()> f(std::move(md.wq.q.front()));
+            md.wq.q.pop();
+
+            lock.unlock();
+
+
+            f();
+        }
+    });
+
+    //Binding asset stuff
+    bindasset(mdata.L);
+    //Binding texture asset
+
+    texture_binder texture_b(md, mdata.basepath, mdata.rend, mdata.L);
+    bindtexture(mdata.L, &texture_b,
+        Enj_Lua_TextureOnPreload,
+        Enj_Lua_TextureOnUnload,
+        Enj_Lua_TextureOnCanUnload);
+
+    glyph_binder glyph_b(md, mdata.L);
+    bindglyph(mdata.L, &glyph_b,
+        Enj_Lua_GlyphOnPreload,
+        Enj_Lua_GlyphOnUnload,
+        Enj_Lua_GlyphOnCanUnload);
+
+    sound_binder sound_b(md, mdata.basepath, mdata.L);
+    bindsound(mdata.L, &sound_b,
+        Enj_Lua_SoundOnPreload,
+        Enj_Lua_SoundOnUnload,
+        Enj_Lua_SoundOnCanUnload);
+
+    font_binder font_b(md, mdata.basepath, mdata.rend, mdata.L, texture_b, glyph_b);
+    bindfont(mdata.L, &font_b,
+        Enj_Lua_FontOnPreload,
+        Enj_Lua_FontOnUnload,
+        Enj_Lua_FontOnCanUnload);
+
+    data_binder data_b(md, mdata.basepath, mdata.L);
+    binddata(mdata.L, &data_b,
+        Enj_Lua_DataOnPreload,
+        Enj_Lua_DataOnUnload,
+        Enj_Lua_DataOnCanUnload);
+
+    lua_register(mdata.L, "get_mousepos", luagetmousecoords);
+    lua_register(mdata.L, "get_mousepressed", luagetmousepressed);
+
+    lua_pushlightuserdata(mdata.L, &isquit);
+    lua_pushcclosure(mdata.L, luasetquit, 1);
+    lua_setglobal(mdata.L, "quit");
+
+
+    bool windowminimized = false;
+
+    //Start main lua script
+    lua_pushcfunction(mdata.L, Enj_Lua_StartThread);
+    if(luaL_loadfile(mdata.L, (mdata.basepath/"main.lua").generic_string().c_str())){
+        printf("%s\n", lua_tostring(mdata.L, 2));
+        lua_settop(mdata.L, 0);
+    }
+    else{
+        lua_call(mdata.L, 1, 0);
+    }
+
+
+    /* Problem with SDL2 means IME doesn't show
+    SDL_Rect textrect;
+    textrect.x = 64;
+    textrect.y = 64;
+    textrect.w = 64;
+    textrect.h = 16;
+
+    SDL_SetTextInputRect(&textrect);
+    */
+
+
+    SDL_Event ev;
+
+    while(!isquit){
+        start = std::chrono::high_resolution_clock::now();
+
+
+        Enj_Keyboard *kb = Enj_GetKeyboardListTail(&mdata.keyboards);
+        if(kb){
+            if(kb->textmode && !SDL_IsTextInputActive()){
+                SDL_StartTextInput();
+            }
+            else if(!kb->textmode && SDL_IsTextInputActive()){
+                SDL_StopTextInput();
+            }
+
+        }
+        else if(SDL_IsTextInputActive()){
+            SDL_StopTextInput();
+        }
+
+        while(SDL_PollEvent(&ev)){
+            switch(ev.type){
+            case SDL_QUIT:
+                goto quit_app;
+            case SDL_WINDOWEVENT:
+                switch (ev.window.event){
+                case SDL_WINDOWEVENT_MINIMIZED:
+                    windowminimized = true;
+                    break;
+                case SDL_WINDOWEVENT_RESTORED:
+                    windowminimized = false;
+                    break;
+                }
+                break;
+            case SDL_KEYDOWN:
+                if(ev.key.keysym.sym == SDLK_ESCAPE)
+                    goto quit_app;
+                else {
+                    Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
+                    if(itb){
+                        if(itb->onpress){
+                            (*itb->onpress)(
+                                SDL_GetKeyName(ev.key.keysym.sym),
+                                itb->data);
+                        }
+                    }
+                }
+                break;
+            case SDL_KEYUP:{
+                    Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
+                    if(itb){
+                        if(itb->onunpress){
+                            (*itb->onunpress)(
+                                SDL_GetKeyName(ev.key.keysym.sym),
+                                itb->data);
+                        }
+                    }
+                }
+                break;
+            case SDL_TEXTINPUT:{
+                    Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
+                    if(itb){
+                        if(itb->oninput){
+                            (*itb->oninput)(
+                                ev.text.text,
+                                itb->data);
+                        }
+                    }
+                }
+                break;
+            case SDL_MOUSEBUTTONDOWN:
+                if(ev.button.button == SDL_BUTTON_LEFT){
+                    Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
+                    while(itb){
+                        int xrel = ev.button.x - itb->rect.x;
+                        int yrel = ev.button.y - itb->rect.y;
+                        if(   (xrel >= 0)
+                            & (xrel < itb->rect.w)
+                            & (yrel >= 0)
+                            & (yrel < itb->rect.h)){
+
+                            if(itb->onpress){
+                                (*itb->onpress)(
+                                    ev.button.x,
+                                    ev.button.y,
+                                    itb->data);
+
+                                break;
+                            }
+
+                        }
+                        itb = itb->prev;
+                    }
+                }
+                break;
+            case SDL_MOUSEBUTTONUP:
+                //Different from mouse button down in that it does not
+                //consider bounding boxes
+                if(ev.button.button == SDL_BUTTON_LEFT){
+                    Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
+                    while(itb){
+                        if(itb->onunpress){
+                            (*itb->onunpress)(
+                                ev.button.x,
+                                ev.button.y,
+                                itb->data);
+                        }
+                        itb = itb->prev;
+                    }
+                }
+                break;
+            case SDL_MOUSEMOTION:{
+
+                char hoverfound = 0;
+
+                Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
+                while(itb){
+                    int xrel = ev.button.x - itb->rect.x;
+                    int yrel = ev.button.y - itb->rect.y;
+                    if( !hoverfound
+                        & (xrel >= 0)
+                        & (xrel < itb->rect.w)
+                        & (yrel >= 0)
+                        & (yrel < itb->rect.h)){
+
+                        if(!itb->hovering){
+                            itb->hovering = !itb->hovering;
+                            if(itb->onhover){
+                                (*itb->onhover)(
+                                    ev.button.x,
+                                    ev.button.y,
+                                    itb->data);
+
+                            }
+                        }
+
+                        hoverfound = 1;
+                    }
+                    else{
+                        if(itb->hovering){
+                            itb->hovering = !itb->hovering;
+                            if(itb->onunhover){
+                                (*itb->onunhover)(
+                                    ev.button.x,
+                                    ev.button.y,
+                                    itb->data);
+
+                            }
+                        }
+                    }
+                    itb = itb->prev;
+                }
+                }
+                break;
+            default:
+                break;
+            }
+        }
+
+        updateluaact(mdata.L);
+
+        if(!windowminimized){
+            SDL_SetRenderDrawColor(mdata.rend,
+                0,
+                0,
+                0,
+                255);
+            SDL_RenderClear(mdata.rend);
+
+            Enj_RenderList_OnRender(&mdata.renderlist, mdata.rend, 0, 0);
+
+            SDL_RenderPresent(mdata.rend);
+        }
+
+
+        do {
+            std::unique_lock lock(md.mq.mtx);
+            if(!md.mq.q.empty()){
+                std::function<void()> f(std::move(md.mq.q.front()));
+                md.mq.q.pop();
+
+                lock.unlock();
+
+                f();
+                continue;
+            }
+            lock.unlock();
+
+            if(std::chrono::high_resolution_clock::now() - start
+            < std::chrono::duration<double>(1./60. - 0.002)){
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+
+        }while(std::chrono::high_resolution_clock::now() - start
+        < std::chrono::duration<double>(1./60.));
+    }
+
+quit_app:
+    {
+        std::lock_guard lock(md.wq.mtx);
+        workeractive = false;
+    }
+    md.cv.notify_one();
+    worker.join();
+
+    for(Enj_RenderNode *it = mdata.renderlist.head; it; it = it->next){
+        (*it->onfreedata)(it->data, it->ctx, it->allocdata);
+    }
+    Enj_RenderListFree(&mdata.renderlist);
+
+    free(mdata.bufrn);
+    free(mdata.bufrl);
+
+    free(mdata.glyphs);
+
+    for(int i = 0; i < mdata.numtextures; i++){
+        SDL_DestroyTexture(mdata.texarr[i]);
+    }
+    free(mdata.texarr);
+
+    Enj_FreeKeyboardList(&mdata.keyboards);
+    free(mdata.bufk);
+
+    Enj_FreeButtonList(&mdata.buttons);
+    free(mdata.bufb);
+
+    free(mdata.bufpr);
+    free(mdata.buf);
+
+    for(int i = 0; i < mdata.numsounds; i++){
+        Mix_FreeChunk(mdata.sounds[i].chunk);
+    }
+    Mix_CloseAudio();
+    Mix_Quit();
+
+    lua_close(mdata.L);
+
+    SDL_DestroyRenderer(mdata.rend);
+    SDL_DestroyWindow(mdata.wind);
+
+    SDL_Quit();
+    return ecode;
+}

@@ -1,0 +1,492 @@
+#include <condition_variable>
+#include <filesystem>
+#include <mutex>
+
+#include <stdlib.h>
+
+#include <SDL_render.h>
+#include <lua.hpp>
+
+#include "../../core/allocator.h"
+#include "../../core/act_lua.h"
+#include "../../core/texture.h"
+#include "../../core/glyph.h"
+
+#include "../util/multi_dispatch.hpp"
+
+#include "../luaasset.h"
+#include "../luafont.h"
+#include "font_binder.hpp"
+#include "font_lua_load.h"
+
+#include "texture_binder.hpp"
+#include "texture_lua_load.h"
+#include "glyph_binder.hpp"
+#include "glyph_lua_load.h"
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_GLYPH_H
+
+typedef struct glyphpair{
+    FT_ULong charcode;
+    int x;
+    int y;
+    int w;
+    int h;
+
+    int xoffset;
+    int yoffset;
+    int advance;
+
+    size_t texture_id;
+    Enj_Glyph *glyph;
+}glyphpair;
+
+static int luagetnullchar(lua_State *L){
+    lua_geti(L, 1, -1);
+    return 1;
+}
+
+int Enj_Lua_FontOnPreload(lua_State *L){
+    if(!lua_isstring(L, 2)) return 0;
+    int isint;
+    lua_Integer fontsize = lua_tointegerx(L, 3, &isint);
+    if(!isint) return 0;
+    if((fontsize <= 0) | (fontsize > 1<<10)) return 0;
+    unsigned int fsize = (unsigned int)fontsize;
+
+    luaasset *la = (luaasset *)lua_touserdata(L, 1);
+
+    font_binder *ctx = (font_binder *)la->ctx;
+    luafont *lf = (luafont *)lua_newuserdatauv(L, sizeof(luafont), 0);
+    lua_setiuservalue(L, 1, 1);
+
+    {
+        std::lock_guard lock(ctx->dispatch.wq.mtx);
+
+        ctx->dispatch.wq.q.push(
+        [la, path = ctx->basepath.generic_string() + lua_tostring(L, 2), fsize, ctx](){
+
+            FT_Library ft;
+            FT_Face face;
+            if(FT_Init_FreeType(&ft)){
+                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                ctx->dispatch.mq.q.push([la, ctx](){
+                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                });
+
+                return;
+            }
+            if(FT_New_Face(ft, path.c_str(), 0, &face)){
+                FT_Done_FreeType(ft);
+
+                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                ctx->dispatch.mq.q.push([la, ctx](){
+                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                });
+                return;
+            }
+            FT_Set_Pixel_Sizes(face, 0, (FT_UInt)fsize);
+            unsigned int fontheight = (unsigned int)fsize;
+
+            FT_UInt gindex;
+
+            size_t numchars = 0;
+            for(
+                FT_ULong charcode = FT_Get_First_Char(face, &gindex);
+                gindex != 0;
+                charcode = FT_Get_Next_Char(face, charcode, &gindex)
+            )
+            {
+                ++numchars;
+            }
+
+            glyphpair *glyphpairs = (glyphpair *)malloc((numchars+1) * sizeof(glyphpair));
+            if(!glyphpairs){
+                FT_Done_Face(face);
+                FT_Done_FreeType(ft);
+
+                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                ctx->dispatch.mq.q.push([la, ctx](){
+                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                });
+                return;
+            }
+            FT_Glyph *ftglyphs = (FT_Glyph *)malloc((numchars+1) * sizeof(FT_Glyph));
+            if(!ftglyphs){
+                free(glyphpairs);
+                FT_Done_Face(face);
+                FT_Done_FreeType(ft);
+
+                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                ctx->dispatch.mq.q.push([la, ctx](){
+                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                });
+                return;
+            }
+            //Handle regular chars
+            size_t i;
+            FT_ULong charcode;
+            for(
+                i = 0, charcode = FT_Get_First_Char(face, &gindex);
+                i < numchars;
+                i++,charcode = FT_Get_Next_Char(face, charcode, &gindex))
+            {
+                FT_Load_Glyph(face, gindex, FT_LOAD_DEFAULT);
+                FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
+                FT_Get_Glyph(face->glyph, ftglyphs + i);
+                glyphpairs[i].w = face->glyph->bitmap.width;
+                glyphpairs[i].h = face->glyph->bitmap.rows;
+
+                glyphpairs[i].xoffset = face->glyph->metrics.horiBearingX/64;
+                glyphpairs[i].yoffset = -face->glyph->metrics.horiBearingY/64;
+                glyphpairs[i].advance = face->glyph->metrics.horiAdvance/64;
+
+                glyphpairs[i].charcode = charcode;
+            }
+            //Handle last null glyph
+
+            FT_Load_Glyph(face, 0, FT_LOAD_DEFAULT);
+            FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
+            FT_Get_Glyph(face->glyph, ftglyphs + numchars);
+            glyphpairs[numchars].w = face->glyph->bitmap.width;
+            glyphpairs[numchars].h = face->glyph->bitmap.rows;
+
+            glyphpairs[numchars].xoffset = face->glyph->metrics.horiBearingX/64;
+            glyphpairs[numchars].yoffset = -face->glyph->metrics.horiBearingY/64;
+            glyphpairs[numchars].advance = face->glyph->metrics.horiAdvance/64;
+
+            glyphpairs[numchars].charcode = 0;
+
+
+
+            int pad = (fsize + 63)/64;
+
+            size_t prog = 0;
+
+
+            unsigned char dimpow;
+
+            for(dimpow = 8; dimpow < 12; dimpow++){
+                //Try to fit all glyphs into a single pow-of-2 texture
+                //TODO: Improve naive algorithm
+                int xpen = 0;
+                int ypen = 0;
+                int rowheight = 0;
+                for(i = prog; i < numchars+1; i++){
+                    int iw = glyphpairs[i].w;
+                    int ih = glyphpairs[i].h;
+                    //Glyph too wide
+                    if (iw + 2*pad > 1<<dimpow){
+                        goto fontrect_fit_fail;
+                    }
+                    rowheight = ih > rowheight ? ih : rowheight;
+
+                    if(xpen + iw + 2*pad > 1<<dimpow){
+                        xpen = 0;
+                        ypen += rowheight + 2*pad;
+                    }
+                    //Not enough height for glyph
+                    if(ypen + rowheight + 2*pad > 1<<dimpow){
+                        goto fontrect_fit_fail;
+                    }
+
+
+                    glyphpairs[i].x = xpen + pad;
+                    glyphpairs[i].y = ypen + pad;
+
+                    xpen += iw + 2*pad;
+                }
+                goto fontrect_success;
+
+            fontrect_fit_fail:
+                continue;
+            }
+            //TODO implement multi texture using dynamic array
+            //No progress made means failure as a whole
+            //if(i == prog) goto fontrect_fail;
+        //fontrect_fail:
+            {
+                for(size_t i = 0; i < numchars+1; i++){
+                    FT_Done_Glyph(ftglyphs[i]);
+                }
+                free(ftglyphs);
+                FT_Done_Face(face);
+                FT_Done_FreeType(ft);
+                free(glyphpairs);
+
+                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                ctx->dispatch.mq.q.push([la, ctx](){
+                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                });
+                return;
+            }
+
+        fontrect_success:
+            size_t atlassize = 4 * (1<<dimpow) * (1<<dimpow);
+            unsigned char *atlas =
+                (unsigned char *)calloc(atlassize, 1);
+
+
+            for(i = 0; i < numchars+1; i++){
+                //Fill out buffer to be used in texture on lua side
+                int gx = glyphpairs[i].x;
+                int gy = glyphpairs[i].y;
+                int gw = glyphpairs[i].w;
+                int gh = glyphpairs[i].h;
+                for(int r = 0; r < gh; r++){
+                    for(int c = 0; c < gw; c++){
+                        unsigned char *rgba =
+                            atlas + (4*( ((gy + r)<<dimpow) + (gx + c)));
+
+                        FT_BitmapGlyph bmg = (FT_BitmapGlyph)ftglyphs[i];
+
+                        int pitch = bmg->bitmap.pitch;
+                        rgba[0] = 255;
+                        rgba[1] = 255;
+                        rgba[2] = 255;
+                        rgba[3] = bmg->bitmap.buffer[r*pitch + c];
+                    }
+                }
+            }
+
+            for(size_t i = 0; i < numchars+1; i++){
+                FT_Done_Glyph(ftglyphs[i]);
+            }
+            free(ftglyphs);
+            FT_Done_Face(face);
+            FT_Done_FreeType(ft);
+
+            std::lock_guard lock(ctx->dispatch.mq.mtx);
+            ctx->dispatch.mq.q.push([la, ctx, atlas, glyphpairs,
+                dimpow, numchars, fontheight]() {
+
+
+                Enj_Texture *texture = (Enj_Texture *)
+                    Enj_Alloc(&ctx->texturebinder.alloc, sizeof(Enj_Texture));
+                if(!texture){
+                    free(atlas);
+                    free(glyphpairs);
+                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    return;
+                }
+
+
+                for(size_t i = 0; i < numchars+1; i++){
+                    glyphpairs[i].glyph = (Enj_Glyph *)
+                        Enj_Alloc(&ctx->glyphbinder.alloc, sizeof(Enj_Glyph));
+
+                    if(!glyphpairs[i].glyph){
+                        for(size_t k = 0; k < i; k++){
+                            Enj_Free(&ctx->glyphbinder.alloc, glyphpairs[k].glyph);
+                        }
+                        free(atlas);
+                        free(glyphpairs);
+                        luafinishpreloadasset(ctx->Lmain, la, 1);
+                        return;
+                    }
+
+                    glyphpairs[i].glyph->rect.x = glyphpairs[i].x;
+                    glyphpairs[i].glyph->rect.y = glyphpairs[i].y;
+                    glyphpairs[i].glyph->rect.w = glyphpairs[i].w;
+                    glyphpairs[i].glyph->rect.h = glyphpairs[i].h;
+                }
+
+                texture->width = 1<<dimpow;
+                texture->height = 1<<dimpow;
+                texture->tx = SDL_CreateTexture(ctx->rend,
+                    SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC,
+                    1<<dimpow, 1<<dimpow);
+
+                SDL_UpdateTexture(texture->tx, NULL, atlas, (1<<dimpow) * 4);
+                SDL_SetTextureBlendMode(texture->tx, SDL_BLENDMODE_BLEND);
+                free(atlas);
+
+
+
+                lua_getfield(ctx->Lmain, LUA_REGISTRYINDEX, "assetweaktable");
+                lua_getfield(ctx->Lmain, LUA_REGISTRYINDEX, "gameproto");
+                lua_getfield(ctx->Lmain, 2, "asset");
+                lua_pushlightuserdata(ctx->Lmain, la->data);
+                lua_gettable(ctx->Lmain, 1);
+                //Init lua texture
+
+                luaasset *la_texture = (luaasset *)
+                    lua_newuserdatauv(ctx->Lmain, sizeof(luaasset), 0);
+                la_texture->ctx = &ctx->texturebinder;
+                la_texture->data = texture;
+                la_texture->refcount = 1;
+                la_texture->flag = 5;
+                la_texture->onunload = Enj_Lua_TextureOnUnload;
+                la_texture->oncanunload = Enj_Lua_TextureOnCanUnload;
+                lua_getfield(ctx->Lmain, 3, "texture");
+                lua_setmetatable(ctx->Lmain, 5);
+
+                lua_setiuservalue(ctx->Lmain, 4, 2);
+
+                //Init lua glyphs, using the lua texture
+
+                for(size_t i = 0; i < numchars+1; i++){
+                    glyphpairs[i].glyph->texture = texture;
+                }
+                lua_createtable(ctx->Lmain, 0, 0);
+                for(size_t i = 0; i < numchars; i++){
+                    luafontchar *lfontchar = (luafontchar *)
+                        lua_newuserdatauv(ctx->Lmain, sizeof(luafontchar), 1);
+                    lfontchar->xoffset = glyphpairs[i].xoffset;
+                    lfontchar->yoffset = glyphpairs[i].yoffset;
+                    lfontchar->advance = glyphpairs[i].advance;
+                    lua_getfield(ctx->Lmain, 2, "fontchar");
+                    lua_setmetatable(ctx->Lmain, 6);
+
+
+                    luaasset *la_glyph = (luaasset *)
+                        lua_newuserdatauv(ctx->Lmain, sizeof(luaasset), 1);
+                    la_glyph->ctx = &ctx->glyphbinder;
+                    la_glyph->data = glyphpairs[i].glyph;
+                    la_glyph->refcount = 1;
+                    la_glyph->flag = 5;
+                    la_glyph->onunload = Enj_Lua_GlyphOnUnload;
+                    la_glyph->oncanunload = Enj_Lua_GlyphOnCanUnload;
+                    lua_getfield(ctx->Lmain, 3, "glyph");
+                    lua_setmetatable(ctx->Lmain, 7);
+                    lua_getiuservalue(ctx->Lmain, 4, 2);
+                    lua_setiuservalue(ctx->Lmain, 7, 1);
+
+                    //Set uservalue glyph of fontchar
+                    lua_setiuservalue(ctx->Lmain, 6, 1);
+
+                    lua_seti(ctx->Lmain, 5, glyphpairs[i].charcode);
+                }
+
+                {
+                    luafontchar *lfontchar = (luafontchar *)
+                        lua_newuserdatauv(ctx->Lmain, sizeof(luafontchar), 1);
+                    lfontchar->xoffset = glyphpairs[numchars].xoffset;
+                    lfontchar->yoffset = glyphpairs[numchars].yoffset;
+                    lfontchar->advance = glyphpairs[numchars].advance;
+                    lua_getfield(ctx->Lmain, 2, "fontchar");
+                    lua_setmetatable(ctx->Lmain, 6);
+
+
+                    luaasset *la_glyph = (luaasset *)
+                        lua_newuserdatauv(ctx->Lmain, sizeof(luaasset), 1);
+                    la_glyph->ctx = &ctx->glyphbinder;
+                    la_glyph->data = glyphpairs[numchars].glyph;
+                    la_glyph->refcount = 1;
+                    la_glyph->flag = 5;
+                    la_glyph->onunload = Enj_Lua_GlyphOnUnload;
+                    la_glyph->oncanunload = Enj_Lua_GlyphOnCanUnload;
+                    lua_getfield(ctx->Lmain, 3, "glyph");
+                    lua_setmetatable(ctx->Lmain, 7);
+                    lua_getiuservalue(ctx->Lmain, 4, 2);
+                    lua_setiuservalue(ctx->Lmain, 7, 1);
+
+                    //Set uservalue glyph of fontchar
+                    lua_setiuservalue(ctx->Lmain, 6, 1);
+                }
+                lua_seti(ctx->Lmain, 5, -1);
+                //Set metatable of glyph table to handle null char
+                lua_createtable(ctx->Lmain, 0, 1);
+                lua_pushcfunction(ctx->Lmain, luagetnullchar);
+                lua_setfield(ctx->Lmain, 6, "__index");
+                //Set metatable for fontchar table
+                lua_setmetatable(ctx->Lmain, 5);
+
+
+                //Set glyphs uservalue for the font luaasset
+                lua_setiuservalue(ctx->Lmain, 4, 3);
+
+                //update C-side lua asset metadata
+                luafont *lf = (luafont *)la->data;
+                lf->height = fontheight;
+
+
+                free(glyphpairs);
+
+                lua_settop(ctx->Lmain, 0);
+                luafinishpreloadasset(ctx->Lmain, la, 0);
+
+            });
+
+        });
+        ctx->dispatch.cv.notify_one();
+    }
+
+    la->data = lf;
+    lua_pushvalue(L, 1);
+    return 1;
+}
+int Enj_Lua_FontOnUnload(lua_State *L){
+    luaasset *la = (luaasset *)lua_touserdata(L, 1);
+
+    //Free all glyphs
+    lua_getiuservalue(L, 1, 3);
+    lua_pushnil(L);
+    while(lua_next(L, 2) != 0){
+        luafontchar *lfc = (luafontchar *)lua_touserdata(L, 4);
+        lua_getiuservalue(L, 4, 1);
+        luaasset *la_glyph = (luaasset *)lua_touserdata(L, 5);
+
+        la_glyph->refcount = 0;
+        lua_pushcfunction(L, Enj_Lua_GlyphOnUnload);
+        lua_pushvalue(L, 5);
+        lua_call(L, 1, 0);
+        la_glyph->data = NULL;
+        la_glyph->flag &= ~(1<<0);
+
+        lua_pop(L, 2);
+    }
+
+    //Free texture
+    lua_pushcfunction(L, Enj_Lua_TextureOnUnload);
+    lua_getiuservalue(L, 1, 2);
+    luaasset *la_texture = (luaasset *)lua_touserdata(L, 4);
+    la_texture->refcount = 0;
+    lua_call(L, 1, 0);
+    la_texture->data = NULL;
+    la_texture->flag &= ~(1<<0);
+
+    return 0;
+}
+int Enj_Lua_FontOnCanUnload(lua_State *L){
+    luaasset *la = (luaasset *)lua_touserdata(L, 1);
+
+    //Check texture
+    lua_pushcfunction(L, Enj_Lua_TextureOnCanUnload);
+    lua_getiuservalue(L, 1, 2);
+    luaasset *la_texture = (luaasset *)lua_touserdata(L, 3);
+    if(la_texture->refcount > 1){
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    lua_call(L, 1, 1);
+    if(!lua_toboolean(L, 2)){
+        return 1;
+    }
+
+    //Check all glyphs
+    lua_getiuservalue(L, 1, 3);
+    lua_pushnil(L);
+    while(lua_next(L, 3) != 0){
+        luafontchar *lfc = (luafontchar *)lua_touserdata(L, 5);
+        lua_getiuservalue(L, 5, 1);
+        luaasset *la_glyph = (luaasset *)lua_touserdata(L, 6);
+        if(la_glyph->refcount > 1){
+            lua_pushboolean(L, 0);
+            return 1;
+        }
+
+        lua_pushcfunction(L, Enj_Lua_GlyphOnCanUnload);
+        lua_pushvalue(L, 6);
+        lua_call(L, 1, 1);
+        if(!lua_toboolean(L, 7)){
+            return 1;
+        }
+
+        lua_pop(L, 4);
+    }
+    lua_pushboolean(L, 1);
+    return 1;
+}

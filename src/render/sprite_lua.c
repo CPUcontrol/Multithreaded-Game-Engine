@@ -19,80 +19,6 @@
 
 #include "luarendernode.h"
 #include "lua_extra_render.h"
-static int luacreatesprite(lua_State *L){
-    int tmpidx = lua_gettop(L);
-
-    lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
-    lua_getfield(L, tmpidx+1, "render");
-    lua_getfield(L, tmpidx+1, "asset");
-
-    lua_getfield(L, tmpidx+3, "glyph");
-    lua_getmetatable(L, 1);
-    if(!lua_compare(L, tmpidx+4, tmpidx+5, LUA_OPEQ)){
-        lua_pushliteral(L, "bad arguments");
-        return Enj_Lua_Error(L);
-    }
-    luaasset *la_glyph = (luaasset *)lua_touserdata(L, 1);
-    if(!(la_glyph->flag & 1<<0)){
-        lua_pushliteral(L, "glyph not loaded");
-        return Enj_Lua_Error(L);
-    }
-
-    Enj_RenderList *parent =
-        (Enj_RenderList *)lua_touserdata(L, lua_upvalueindex(1));
-    Enj_Allocator *allocsprite =
-        (Enj_Allocator *)lua_touserdata(L, lua_upvalueindex(3));
-    luarendernode *lrn = (luarendernode *)
-        lua_newuserdatauv(L, sizeof(luarendernode), 2);
-
-    Enj_Sprite *sp = (Enj_Sprite *)
-        Enj_Alloc(allocsprite, sizeof(Enj_Sprite));
-    if(!sp) {
-        lua_pushliteral(L, "max sprites exceeded");
-        return Enj_Lua_Error(L);
-    }
-
-    Enj_RenderNode *newrn = Enj_RenderListAppend(parent);
-    if(!newrn) {
-        Enj_Free(allocsprite, sp);
-        lua_pushliteral(L, "max render nodes exceeded");
-        return Enj_Lua_Error(L);
-    }
-    newrn->data = sp;
-    newrn->ctx = lua_touserdata(L, lua_upvalueindex(2));
-    newrn->allocdata = allocsprite;
-    newrn->onfreedata = Enj_Sprite_OnFree;
-    newrn->onrender = Enj_Sprite_OnRender;
-    newrn->priority = 0;
-    newrn->active = 1;
-
-    lrn->parent = parent;
-    lrn->rn = newrn;
-
-
-    lua_getfield(L, tmpidx+2, "sprite");
-    lua_setmetatable(L, tmpidx+6);
-
-    sp->glyph = (Enj_Glyph *)la_glyph->data;
-    ++la_glyph->refcount;
-    lua_pushvalue(L, 1);
-    lua_setiuservalue(L, tmpidx+6, 2);
-
-    sp->fill[0]=255;
-    sp->fill[1]=255;
-    sp->fill[2]=255;
-    sp->fill[3]=255;
-
-    sp->x = 0;
-    sp->y = 0;
-    sp->w = sp->glyph->rect.w;
-    sp->h = sp->glyph->rect.h;
-    sp->xcen = 0;
-    sp->ycen = 0;
-    sp->angle = 0;
-
-    return 1;
-}
 
 static int luadestroysprite(lua_State *L){
     int tmpidx = lua_gettop(L);
@@ -128,16 +54,13 @@ static int luadestroysprite(lua_State *L){
 
     lrn->rn = NULL;
 
-    //Remove from parent luarendernode's table if applicable
-    if(lua_getiuservalue(L, 1, 1) == LUA_TTABLE){
-        lua_pushvalue(L, 1);
-        lua_pushnil(L);
-        lua_settable(L, tmpidx+5);
+    //Remove from parent luarendernode's table
+    lua_pushvalue(L, 1);
+    lua_pushnil(L);
+    lua_settable(L, tmpidx+5);
 
-        lua_pushnil(L);
-        lua_setiuservalue(L, 1, 1);
-    }
-
+    lua_pushnil(L);
+    lua_setiuservalue(L, 1, 1);
 
     return 0;
 }
@@ -624,18 +547,10 @@ static int luasetspriteangle(lua_State *L){
 
 void bindsprite(
     lua_State *L,
-    Enj_RenderList *parentrender,
     SDL_Renderer *rend,
     Enj_Allocator *allocsprite
 )
 {
-    lua_pushlightuserdata(L, parentrender);
-    lua_pushlightuserdata(L, rend);
-    lua_pushlightuserdata(L, allocsprite);
-
-    lua_pushcclosure(L, luacreatesprite, 3);
-    lua_setglobal(L, "create_sprite");
-
     lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
     lua_getfield(L, 1, "render");
     //spritemeta

@@ -14,67 +14,6 @@
 
 #include "luarendernode.h"
 #include "lua_extra_render.h"
-static int luacreateprimrect(lua_State *L){
-    int tmpidx = lua_gettop(L);
-
-    lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
-    lua_getfield(L, tmpidx+1, "render");
-    lua_getfield(L, tmpidx+1, "asset");
-
-
-    Enj_RenderList *parent =
-        (Enj_RenderList *)lua_touserdata(L, lua_upvalueindex(1));
-    Enj_Allocator *allocprimrect =
-        (Enj_Allocator *)lua_touserdata(L, lua_upvalueindex(3));
-    luarendernode *lrn = (luarendernode *)
-        lua_newuserdatauv(L, sizeof(luarendernode), 1);
-
-    Enj_PrimRect *pr = (Enj_PrimRect *)
-        Enj_Alloc(allocprimrect, sizeof(Enj_PrimRect));
-    if(!pr) {
-        lua_pushliteral(L, "max primrects exceeded");
-        return Enj_Lua_Error(L);
-    }
-
-    Enj_RenderNode *newrn = Enj_RenderListAppend(parent);
-    if(!newrn) {
-        Enj_Free(allocprimrect, pr);
-        lua_pushliteral(L, "max render nodes exceeded");
-        return Enj_Lua_Error(L);
-    }
-    newrn->data = pr;
-    newrn->ctx = lua_touserdata(L, lua_upvalueindex(2));
-    newrn->allocdata = allocprimrect;
-    newrn->onfreedata = Enj_PrimRect_OnFree;
-    newrn->onrender = Enj_PrimRect_OnRender;
-    newrn->priority = 0;
-    newrn->active = 1;
-
-    lrn->parent = parent;
-    lrn->rn = newrn;
-
-
-    lua_getfield(L, tmpidx+2, "primrect");
-    lua_setmetatable(L, tmpidx+4);
-
-    pr->fill[0]=0;
-    pr->fill[1]=0;
-    pr->fill[2]=0;
-    pr->fill[3]=0;
-    pr->stroke[0]=255;
-    pr->stroke[1]=255;
-    pr->stroke[2]=255;
-    pr->stroke[3]=255;
-
-    pr->x = 0;
-    pr->y = 0;
-    pr->w = 0;
-    pr->h = 0;
-    pr->xcen = 0;
-    pr->ycen = 0;
-
-    return 1;
-}
 
 static int luadestroyprimrect(lua_State *L){
     int tmpidx = lua_gettop(L);
@@ -104,16 +43,13 @@ static int luadestroyprimrect(lua_State *L){
 
     lrn->rn = NULL;
 
-    //Remove from parent luarendernode's table if applicable
-    if(lua_getiuservalue(L, 1, 1) == LUA_TTABLE){
-        lua_pushvalue(L, 1);
-        lua_pushnil(L);
-        lua_settable(L, tmpidx+4);
+    //Remove from parent luarendernode's table
+    lua_pushvalue(L, 1);
+    lua_pushnil(L);
+    lua_settable(L, tmpidx+4);
 
-        lua_pushnil(L);
-        lua_setiuservalue(L, 1, 1);
-    }
-
+    lua_pushnil(L);
+    lua_setiuservalue(L, 1, 1);
 
     return 0;
 }
@@ -652,18 +588,10 @@ static int luasetprimrectcentery(lua_State *L){
 
 void bindprimrect(
     lua_State *L,
-    Enj_RenderList *parentrender,
     SDL_Renderer *rend,
     Enj_Allocator *allocprimrect
 )
 {
-    lua_pushlightuserdata(L, parentrender);
-    lua_pushlightuserdata(L, rend);
-    lua_pushlightuserdata(L, allocprimrect);
-
-    lua_pushcclosure(L, luacreateprimrect, 3);
-    lua_setglobal(L, "create_primrect");
-
     lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
     lua_getfield(L, 1, "render");
     //primrectmeta

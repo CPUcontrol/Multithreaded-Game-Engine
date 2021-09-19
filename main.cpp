@@ -196,7 +196,7 @@ typedef struct maindata{
     Enj_Allocator allorn;
     Enj_PoolAllocatorData datrn;
 
-    Enj_RenderList renderlist;
+    Enj_RenderList *renderlist;
 
 } maindata;
 
@@ -376,25 +376,22 @@ int main(int argc, char **argv){
     mdata.bufrn = malloc(sizeof(Enj_RenderNode)*MAX_SPRITES);
     Enj_InitPoolAllocator(&mdata.allorn, &mdata.datrn, mdata.bufrn, sizeof(Enj_RenderNode)*MAX_SPRITES, sizeof(Enj_RenderNode));
 
-    Enj_RenderListInit(&mdata.renderlist, &mdata.allorn);
     bindrender(mdata.L);
 
     //Make grid of sprites
     mdata.buf = malloc(sizeof(Enj_Sprite)*MAX_SPRITES);
     Enj_InitPoolAllocator(&mdata.allo, &mdata.dat, mdata.buf, sizeof(Enj_Sprite)*MAX_SPRITES, sizeof(Enj_Sprite));
-    bindsprite(mdata.L, &mdata.renderlist, mdata.rend, &mdata.allo);
+    bindsprite(mdata.L, mdata.rend, &mdata.allo);
     //Make grid of rects
     mdata.bufpr = malloc(sizeof(Enj_PrimRect)*MAX_SPRITES);
     Enj_InitPoolAllocator(&mdata.allopr, &mdata.datpr, mdata.bufpr, sizeof(Enj_PrimRect)*MAX_SPRITES, sizeof(Enj_PrimRect));
-    bindprimrect(mdata.L, &mdata.renderlist, mdata.rend, &mdata.allopr);
+    bindprimrect(mdata.L, mdata.rend, &mdata.allopr);
 
-    bindrenderlist(mdata.L, &mdata.renderlist, mdata.rend,
+    bindrenderlist(mdata.L, mdata.rend,
         &mdata.allorl, &mdata.allorn, &mdata.allo, &mdata.allopr);
 
-    //Init root render to renderlist - TODO replace all free renderlist funcs
-    lua_getglobal(mdata.L, "create_renderlist");
-    lua_call(mdata.L, 0, 1);
-    lua_setglobal(mdata.L, "root_render");
+    //Init root render to renderlist
+    mdata.renderlist = bindroot_renderlist(mdata.L, mdata.rend, &mdata.allorl, &mdata.allorn);
 
     //GUI button
     mdata.bufb = malloc(64*128);
@@ -675,7 +672,7 @@ int main(int argc, char **argv){
                 255);
             SDL_RenderClear(mdata.rend);
 
-            Enj_RenderList_OnRender(&mdata.renderlist, mdata.rend, 0, 0);
+            Enj_RenderList_OnRender(mdata.renderlist, mdata.rend, 0, 0);
 
             SDL_RenderPresent(mdata.rend);
         }
@@ -711,10 +708,10 @@ quit_app:
     md.cv.notify_one();
     worker.join();
 
-    for(Enj_RenderNode *it = mdata.renderlist.head; it; it = it->next){
+    for(Enj_RenderNode *it = mdata.renderlist->head; it; it = it->next){
         (*it->onfreedata)(it->data, it->ctx, it->allocdata);
     }
-    Enj_RenderListFree(&mdata.renderlist);
+    Enj_RenderListFree(mdata.renderlist);
 
     free(mdata.bufrn);
     free(mdata.bufrl);

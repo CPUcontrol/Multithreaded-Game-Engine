@@ -338,59 +338,56 @@ static int luasetrenderlistyoffset(lua_State *L){
 }
 
 
-static int luacreaterenderlist(lua_State *L){
-    int tmpidx = lua_gettop(L);
-
+Enj_RenderList * bindroot_renderlist(
+    lua_State *L,
+    SDL_Renderer *rend,
+    Enj_Allocator *allocrenderlist,
+    Enj_Allocator *allocrendernode
+)
+{
     lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
-    lua_getfield(L, tmpidx+1, "render");
-
-
-    Enj_RenderList *parent =
-        (Enj_RenderList *)lua_touserdata(L, lua_upvalueindex(1));
-    Enj_Allocator *allocrl =
-        (Enj_Allocator *)lua_touserdata(L, lua_upvalueindex(3));
-    Enj_Allocator *allocrn =
-        (Enj_Allocator *)lua_touserdata(L, lua_upvalueindex(4));
+    lua_getfield(L, 1, "render");
 
     luarendernode *lrn = (luarendernode *)
         lua_newuserdatauv(L, sizeof(luarendernode), 2);
 
     Enj_RenderList *rl = (Enj_RenderList *)
-        Enj_Alloc(allocrl, sizeof(Enj_RenderList));
+        Enj_Alloc(allocrenderlist, sizeof(Enj_RenderList));
     if(!rl) {
-        lua_pushliteral(L, "max renderlists exceeded");
-        return Enj_Lua_Error(L);
+        return NULL;
     }
-    Enj_RenderListInit(rl, allocrn);
+    Enj_RenderListInit(rl, allocrendernode);
 
-    Enj_RenderNode *newrn = Enj_RenderListAppend(parent);
+    Enj_RenderNode *newrn = (Enj_RenderNode *)
+        Enj_Alloc(allocrendernode, sizeof(Enj_RenderNode));
     if(!newrn) {
-        Enj_Free(allocrl, rl);
-        lua_pushliteral(L, "max render nodes exceeded");
-        return Enj_Lua_Error(L);
+        Enj_Free(allocrenderlist, rl);
+        return NULL;
     }
     newrn->data = rl;
-    newrn->ctx = lua_touserdata(L, lua_upvalueindex(2));
-    newrn->allocdata = allocrl;
+    newrn->ctx = rend;
+    newrn->allocdata = allocrenderlist;
     newrn->onfreedata = Enj_RenderList_OnFree;
     newrn->onrender = Enj_RenderList_OnRender;
     newrn->priority = 0;
     newrn->active = 1;
 
-    lrn->parent = parent;
+    lrn->parent = NULL;
     lrn->rn = newrn;
 
-    lua_getfield(L, tmpidx+2, "renderlist");
-    lua_setmetatable(L, tmpidx+3);
+    lua_getfield(L, 2, "renderlist");
+    lua_setmetatable(L, 3);
 
     rl->xoffset = 0;
     rl->yoffset = 0;
 
     //Create empty table for renderlist to store children
     lua_createtable(L, 0, 2);
-    lua_setiuservalue(L, tmpidx+3, 2);
+    lua_setiuservalue(L, 3, 2);
 
-    return 1;
+    lua_setglobal(L, "root_render");
+    lua_settop(L, 0);
+    return rl;
 }
 
 static int luadestroyrenderlist(lua_State *L){
@@ -406,6 +403,11 @@ static int luadestroyrenderlist(lua_State *L){
 
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
+
+    if(!lrn->parent){
+        lua_pushliteral(L, "cannot destroy root node");
+        return Enj_Lua_Error(L);
+    }
 
     Enj_RenderNode *rn = lrn->rn;
 
@@ -434,22 +436,19 @@ static int luadestroyrenderlist(lua_State *L){
 
     lrn->rn = NULL;
 
-    //Remove from parent luarendernode's table if applicable
-    if(lua_getiuservalue(L, 1, 1) == LUA_TTABLE){
-        lua_pushvalue(L, 1);
-        lua_pushnil(L);
-        lua_settable(L, tmpidx+5);
+    //Remove from parent luarendernode's table
+    lua_pushvalue(L, 1);
+    lua_pushnil(L);
+    lua_settable(L, tmpidx+5);
 
-        lua_pushnil(L);
-        lua_setiuservalue(L, 1, 1);
-    }
+    lua_pushnil(L);
+    lua_setiuservalue(L, 1, 1);
 
     return 0;
 }
 
 void bindrenderlist(
     lua_State *L,
-    Enj_RenderList *parentrender,
     SDL_Renderer *rend,
     Enj_Allocator *allocrenderlist,
     Enj_Allocator *allocrendernode,
@@ -457,13 +456,6 @@ void bindrenderlist(
     Enj_Allocator *allocprimrect
     )
 {
-    lua_pushlightuserdata(L, parentrender);
-    lua_pushlightuserdata(L, rend);
-    lua_pushlightuserdata(L, allocrenderlist);
-    lua_pushlightuserdata(L, allocrendernode);
-    lua_pushcclosure(L, luacreaterenderlist, 4);
-    lua_setglobal(L, "create_renderlist");
-
     lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
     lua_getfield(L, 1, "render");
     //spritemeta

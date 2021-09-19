@@ -391,6 +391,11 @@ int main(int argc, char **argv){
     bindrenderlist(mdata.L, &mdata.renderlist, mdata.rend,
         &mdata.allorl, &mdata.allorn, &mdata.allo, &mdata.allopr);
 
+    //Init root render to renderlist - TODO replace all free renderlist funcs
+    lua_getglobal(mdata.L, "create_renderlist");
+    lua_call(mdata.L, 0, 1);
+    lua_setglobal(mdata.L, "root_render");
+
     //GUI button
     mdata.bufb = malloc(64*128);
     Enj_InitPoolAllocator(&mdata.allob, &mdata.datb, mdata.bufb, 64*128, sizeof(Enj_Button));

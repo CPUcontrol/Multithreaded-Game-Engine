@@ -161,14 +161,6 @@ typedef struct maindata{
 
     SDL_Window *wind;
     SDL_Renderer *rend;
-    SDL_Texture **texarr;
-
-    Enj_Glyph *glyphs;
-    Enj_Sound *sounds;
-
-    size_t numtextures;
-    size_t numglyphs;
-    size_t numsounds;
 
     void *buf;
     Enj_Allocator allo;
@@ -202,27 +194,11 @@ typedef struct maindata{
 
 
 
-static int loadsounds(maindata *mdatap, const char *path);
-
-static void startscript(lua_State *L, const char *name);
-
-
-
 
 #define MAX_ASSETS (1<<12)
 
 #define MAX_SPRITES 1024
 
-
-
-
-typedef struct glyphctx{
-    void *buf;
-    Enj_Allocator alloc;
-    Enj_PoolAllocatorData dat;
-
-    lua_State *Lmain;
-} glyphctx;
 
 int luadofilebasepath_cont(lua_State *L, int status, lua_KContext ctx);
 int luadofilebasepath(lua_State *L){
@@ -405,15 +381,6 @@ int main(int argc, char **argv){
     Enj_InitKeyboardList(&mdata.keyboards, &mdata.allok);
     bindkeyboard(mdata.L, &mdata.keyboards);
 
-    mdata.texarr =
-        (SDL_Texture **)malloc(sizeof(SDL_Texture *) * MAX_ASSETS);
-    mdata.numtextures = 0;
-    mdata.glyphs =
-        (Enj_Glyph *)malloc(sizeof(Enj_Glyph) * MAX_ASSETS);
-    mdata.numglyphs = 0;
-    mdata.sounds =
-        (Enj_Sound *)malloc(sizeof(Enj_Sound) * MAX_ASSETS);
-    mdata.numsounds = 0;
 
     multi_dispatch md;
     bool workeractive = true;
@@ -716,13 +683,6 @@ quit_app:
     free(mdata.bufrn);
     free(mdata.bufrl);
 
-    free(mdata.glyphs);
-
-    for(int i = 0; i < mdata.numtextures; i++){
-        SDL_DestroyTexture(mdata.texarr[i]);
-    }
-    free(mdata.texarr);
-
     Enj_FreeKeyboardList(&mdata.keyboards);
     free(mdata.bufk);
 
@@ -732,9 +692,6 @@ quit_app:
     free(mdata.bufpr);
     free(mdata.buf);
 
-    for(int i = 0; i < mdata.numsounds; i++){
-        Mix_FreeChunk(mdata.sounds[i].chunk);
-    }
     Mix_CloseAudio();
     Mix_Quit();
 

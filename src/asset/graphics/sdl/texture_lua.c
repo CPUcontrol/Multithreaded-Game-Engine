@@ -4,34 +4,29 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-#include "glyph_lua.h"
+#include "../texture_lua.h"
 
-#include "../core/glyph.h"
+#include "../../../core/graphics/sdl/texture.h"
 
-#include "lua_extra_asset.h"
-#include "luaasset.h"
+#include "../../lua_extra_asset.h"
+#include "../../luaasset.h"
 
 
-static int luagetglyphwidth(lua_State *L){
+static int luagettexturewidth(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
-    lua_pushinteger(L, ((Enj_Glyph *)la->data)->rect.w);
+    lua_pushinteger(L, ((Enj_Texture *)la->data)->width);
     return 1;
 }
 
-static int luagetglyphheight(lua_State *L){
+static int luagettextureheight(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
-    lua_pushinteger(L, ((Enj_Glyph *)la->data)->rect.h);
+    lua_pushinteger(L, ((Enj_Texture *)la->data)->height);
     return 1;
 }
 
-static int luagetglyphtexture(lua_State *L){
-    lua_getiuservalue(L, 1, 1);
-    return 1;
-}
-
-void bindglyph(lua_State *L, void *ctx,
+void bindtexture(lua_State *L, void *ctx,
     int (*onpreload)(lua_State *),
     int (*onunload)(lua_State *),
     int (*oncanunload)(lua_State *)
@@ -47,13 +42,11 @@ void bindglyph(lua_State *L, void *ctx,
     lua_createtable(L, 0, 0);
 
     //gets
-    lua_createtable(L, 0, 3);
-    lua_pushcfunction(L, luagetglyphwidth);
+    lua_createtable(L, 0, 2);
+    lua_pushcfunction(L, luagettexturewidth);
     lua_setfield(L, 5, "width");
-    lua_pushcfunction(L, luagetglyphheight);
+    lua_pushcfunction(L, luagettextureheight);
     lua_setfield(L, 5, "height");
-    lua_pushcfunction(L, luagetglyphtexture);
-    lua_setfield(L, 5, "texture");
     lua_pushcclosure(L, Enj_Lua_GetAssetDispatch, 2);
 
     lua_setfield(L, 3, "__index");
@@ -65,7 +58,7 @@ void bindglyph(lua_State *L, void *ctx,
     lua_setfield(L, 3, "__newindex");
 
     //rest of the meta
-    lua_pushliteral(L, "glyph");
+    lua_pushliteral(L, "texture");
     lua_pushvalue(L, 4);
     lua_setfield(L, 3, "__metatable");
 
@@ -75,9 +68,9 @@ void bindglyph(lua_State *L, void *ctx,
     lua_pushcfunction(L, oncanunload);
     lua_pushlightuserdata(L, ctx);
     lua_pushvalue(L, 3);
-    lua_pushinteger(L, 1);
+    lua_pushinteger(L, 0);
     lua_pushcclosure(L, Enj_Lua_CreateAsset, 6);
-    lua_setglobal(L, "create_glyph");
+    lua_setglobal(L, "create_texture");
 
     //Bidirectional relation asset table
     lua_pushvalue(L, 4);

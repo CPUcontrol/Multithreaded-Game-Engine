@@ -26,30 +26,36 @@ set (CORE_SOURCE
     src/asset/luaasset.c
     src/asset/asset_lua.c
     src/asset/lua_extra_asset.c
-    src/asset/texture_lua.c
-    src/asset/bind/texture_binder.cpp
-    src/asset/bind/texture_lua_load.cpp
-    src/asset/glyph_lua.c
-    src/asset/bind/glyph_binder.cpp
-    src/asset/bind/glyph_lua_load.cpp
-    src/asset/sound_lua.c
-    src/asset/bind/sound_binder.cpp
-    src/asset/bind/sound_lua_load.cpp
-    src/asset/font_lua.c
-    src/asset/bind/font_binder.cpp
-    src/asset/bind/font_lua_load.cpp
-    src/asset/data_lua.c
-    src/asset/bind/data_binder.cpp
-    src/asset/bind/data_lua_load.cpp
 
-    src/render/lua_extra_render.c
-    src/render/render_lua.c
-    src/render/renderlist.c
-    src/render/renderlist_lua.c
-    src/render/sprite.c
-    src/render/sprite_lua.c
-    src/render/primrect.c
-    src/render/primrect_lua.c
+    src/asset/graphics/font_lua.c
+    src/asset/graphics/sdl/texture_lua.c
+    src/asset/graphics/sdl/glyph_lua.c
+
+    src/asset/bind/graphics/sdl/texture_binder.cpp
+    src/asset/bind/graphics/sdl/texture_lua_load.cpp
+    src/asset/bind/graphics/sdl/glyph_binder.cpp
+    src/asset/bind/graphics/sdl/glyph_lua_load.cpp
+    src/asset/bind/graphics/sdl/font_binder.cpp
+    src/asset/bind/graphics/sdl/font_lua_load.cpp
+
+    src/asset/audio/sound_lua.c
+
+    src/asset/bind/audio/sound_binder.cpp
+    src/asset/bind/audio/sound_lua_load.cpp
+
+    src/asset/misc/data_lua.c
+
+    src/asset/bind/misc/data_binder.cpp
+    src/asset/bind/misc/data_lua_load.cpp
+
+    src/render/sdl/lua_extra_render.c
+    src/render/sdl/render_lua.c
+    src/render/sdl/renderlist.c
+    src/render/sdl/renderlist_lua.c
+    src/render/sdl/sprite.c
+    src/render/sdl/sprite_lua.c
+    src/render/sdl/primrect.c
+    src/render/sdl/primrect_lua.c
 
     )
 
@@ -57,7 +63,7 @@ set (CORE_SOURCE
 if (MSVC)
     add_library(core ${CORE_SOURCE})
     add_executable (main
-        main.cpp
+        src/main.cpp
         )
 
     set_target_properties(main PROPERTIES VS_DPI_AWARE "PerMonitor")
@@ -180,7 +186,7 @@ elseif (APPLE)
 
     add_library(core ${CORE_SOURCE})
     add_executable (main MACOSX_BUNDLE
-        main.cpp
+        src/main.cpp
         ${RESOURCE_FILES}
         )
 
@@ -233,7 +239,6 @@ target_include_directories(core PRIVATE "${CMAKE_SOURCE_DIR}/lua/include")
 target_include_directories(core PRIVATE "${CMAKE_SOURCE_DIR}/zlib/include")
 target_include_directories(core PRIVATE "${CMAKE_SOURCE_DIR}/libpng/include")
 target_include_directories(core PRIVATE "${CMAKE_SOURCE_DIR}/freetype/include")
-target_include_directories(main PRIVATE "${CMAKE_SOURCE_DIR}/src")
 target_include_directories(main PRIVATE "${CMAKE_SOURCE_DIR}/SDL2/include")
 target_include_directories(main PRIVATE "${CMAKE_SOURCE_DIR}/SDL2_mixer/include")
 target_include_directories(main PRIVATE "${CMAKE_SOURCE_DIR}/lua/include")
@@ -253,8 +258,6 @@ target_link_libraries (main PUBLIC core
 
 
 
-add_executable (testallo testallo.cpp src/core/allocator.c)
-target_include_directories(testallo PRIVATE "${CMAKE_SOURCE_DIR}/src/core")
-target_include_directories(testallo PRIVATE "${CMAKE_SOURCE_DIR}/src/ext")
+add_executable (testallo src/testallo.cpp src/core/allocator.c)
 
 include (CPack)

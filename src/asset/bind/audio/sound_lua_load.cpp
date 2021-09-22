@@ -7,34 +7,40 @@
 #include <SDL_mixer.h>
 #include <lua.hpp>
 
-#include "../../core/act_lua.h"
-#include "../../core/instream.h"
+#include "../../../core/allocator.h"
+#include "../../../core/act_lua.h"
+#include "../../../core/instream.h"
+#include "../../../core/sound.h"
 
-#include "../util/multi_dispatch.hpp"
+#include "../../util/multi_dispatch.hpp"
 
-#include "../luaasset.h"
+#include "../../luaasset.h"
 
-#include "data_binder.hpp"
-#include "data_lua_load.h"
+#include "sound_binder.hpp"
+#include "../sound_lua_load.h"
 
-int Enj_Lua_DataOnPreload(lua_State *L){
+int Enj_Lua_SoundOnPreload(lua_State *L){
     if(!lua_isstring(L, 2)) return 0;
 
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
-    data_binder *ctx = (data_binder *)la->ctx;
+    sound_binder *ctx = (sound_binder *)la->ctx;
+    Enj_Sound *e = (Enj_Sound *)Enj_Alloc(&ctx->alloc, sizeof(Enj_Sound));
+    if(!e) return 0;
+
 
     {
         std::lock_guard lock(ctx->dispatch.wq.mtx);
 
-        ctx->dispatch.wq.q.push([la, path = ctx->basepath.generic_string() + lua_tostring(L, 2), ctx](){
+        ctx->dispatch.wq.q.push([la, e, path = ctx->basepath.generic_string() + lua_tostring(L, 2), ctx](){
             Enj_Instream ifile;
 
             if(Enj_InitInstreamFromFile(&ifile, path.c_str())){
 
                 std::lock_guard lock(ctx->dispatch.mq.mtx);
-                ctx->dispatch.mq.q.push([la, ctx](){
+                ctx->dispatch.mq.q.push([la, e, ctx](){
                     luafinishpreloadasset(ctx->Lmain, la, 1);
+                    Enj_Free(&ctx->alloc, e);
                 });
 
                 return;
@@ -51,8 +57,9 @@ int Enj_Lua_DataOnPreload(lua_State *L){
                     Enj_FreeInstream(&ifile);
 
                     std::lock_guard lock(ctx->dispatch.mq.mtx);
-                    ctx->dispatch.mq.q.push([la, ctx](){
+                    ctx->dispatch.mq.q.push([la, e, ctx](){
                         luafinishpreloadasset(ctx->Lmain, la, 1);
+                        Enj_Free(&ctx->alloc, e);
                     });
 
                     return;
@@ -71,8 +78,9 @@ int Enj_Lua_DataOnPreload(lua_State *L){
                     Enj_FreeInstream(&ifile);
 
                     std::lock_guard lock(ctx->dispatch.mq.mtx);
-                    ctx->dispatch.mq.q.push([la, ctx](){
+                    ctx->dispatch.mq.q.push([la, e, ctx](){
                         luafinishpreloadasset(ctx->Lmain, la, 1);
+                        Enj_Free(&ctx->alloc, e);
                     });
 
                     return;
@@ -85,36 +93,40 @@ int Enj_Lua_DataOnPreload(lua_State *L){
 
 
             std::lock_guard lock(ctx->dispatch.mq.mtx);
-            ctx->dispatch.mq.q.push([la, buffer, ctx, fsize]() {
-                lua_getfield(ctx->Lmain, LUA_REGISTRYINDEX, "assetweaktable");
-                lua_pushlightuserdata(ctx->Lmain, la->data);
-                lua_gettable(ctx->Lmain, 1);
+            ctx->dispatch.mq.q.push([la, e, buffer, ctx, fsize]() {
 
-                //Put data in uservalue of asset
-                lua_pushlstring(ctx->Lmain, (char *)buffer, fsize);
-                lua_setiuservalue(ctx->Lmain, 2, 1);
-
+                e->chunk = Mix_LoadWAV_RW(SDL_RWFromConstMem(buffer, fsize), 1);
                 free(buffer);
 
-                lua_settop(ctx->Lmain, 0);
-                luafinishpreloadasset(ctx->Lmain, la, 0);
+                //if failure, chunk is null, so signal 1, otherwise success 0
+                if(!e->chunk){
+                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    Enj_Free(&ctx->alloc, e);
+                }
+                else{
+                    luafinishpreloadasset(ctx->Lmain, la, 0);
+                }
 
             });
 
         });
         ctx->dispatch.cv.notify_one();
     }
-    //Just need a unique id, the luaasset address itself will do nicely
-    la->data = la;
+
+    la->data = e;
     lua_pushvalue(L, 1);
     return 1;
 }
-int Enj_Lua_DataOnUnload(lua_State *L){\
-    lua_pushnil(L);
-    lua_setiuservalue(L, 1, 1);
+int Enj_Lua_SoundOnUnload(lua_State *L){
+    luaasset *la = (luaasset *)lua_touserdata(L, 1);
+    Enj_Sound *e = (Enj_Sound *)la->data;
+    sound_binder *ctx = (sound_binder *)la->ctx;
+
+    Mix_FreeChunk(e->chunk);
+    Enj_Free(&ctx->alloc, e);
     return 0;
 }
-int Enj_Lua_DataOnCanUnload(lua_State *L){
+int Enj_Lua_SoundOnCanUnload(lua_State *L){
     lua_pushboolean(L, 1);
     return 1;
 }

@@ -9,13 +9,13 @@
 #include "renderlist.h"
 #include "renderlist_lua.h"
 
-#include "../core/allocator.h"
-#include "../core/lua_extra.h"
+#include "../../core/allocator.h"
+#include "../../core/lua_extra.h"
 
-#include "../core/glyph.h"
+#include "../../core/graphics/sdl/glyph.h"
 
-#include "../asset/luaasset.h"
-#include "../asset/glyph_lua.h"
+#include "../../asset/luaasset.h"
+#include "../../asset/graphics/glyph_lua.h"
 
 #include "luarendernode.h"
 #include "lua_extra_render.h"

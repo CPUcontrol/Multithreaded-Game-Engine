@@ -1,5 +1,5 @@
 #pragma once
-#include "../../core/allocator.h"
+#include "../../../../core/allocator.h"
 
 typedef struct SDL_Renderer SDL_Renderer;
 typedef struct lua_State lua_State;

@@ -4,9 +4,9 @@
 
 #include "font_lua.h"
 
-#include "../core/lua_extra.h"
-#include "lua_extra_asset.h"
-#include "luaasset.h"
+#include "../../core/lua_extra.h"
+#include "../lua_extra_asset.h"
+#include "../luaasset.h"
 #include "luafont.h"
 
 static int luagetfontcharxoffset(lua_State *L){

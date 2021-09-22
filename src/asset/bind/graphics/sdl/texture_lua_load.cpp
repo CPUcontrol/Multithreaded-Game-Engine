@@ -7,18 +7,18 @@
 #include <SDL_render.h>
 #include <lua.hpp>
 
-#include "../../core/allocator.h"
-#include "../../core/act_lua.h"
-#include "../../core/instream.h"
-#include "../../core/pngload.h"
-#include "../../core/texture.h"
+#include "../../../../core/allocator.h"
+#include "../../../../core/act_lua.h"
+#include "../../../../core/instream.h"
+#include "../../../../core/pngload.h"
+#include "../../../../core/graphics/sdl/texture.h"
 
-#include "../util/multi_dispatch.hpp"
+#include "../../../util/multi_dispatch.hpp"
 
-#include "../luaasset.h"
+#include "../../../luaasset.h"
 
 #include "texture_binder.hpp"
-#include "texture_lua_load.h"
+#include "../../texture_lua_load.h"
 
 int Enj_Lua_TextureOnPreload(lua_State *L){
     if(!lua_isstring(L, 2)) return 0;

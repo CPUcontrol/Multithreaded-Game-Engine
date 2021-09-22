@@ -5,17 +5,17 @@
 
 #include <lua.hpp>
 
-#include "../../core/allocator.h"
-#include "../../core/act_lua.h"
-#include "../../core/glyph.h"
-#include "../../core/texture.h"
+#include "../../../../core/allocator.h"
+#include "../../../../core/act_lua.h"
+#include "../../../../core/graphics/sdl/glyph.h"
+#include "../../../../core/graphics/sdl/texture.h"
 
-#include "../util/multi_dispatch.hpp"
+#include "../../../util/multi_dispatch.hpp"
 
-#include "../luaasset.h"
+#include "../../../luaasset.h"
 
 #include "glyph_binder.hpp"
-#include "glyph_lua_load.h"
+#include "../../glyph_lua_load.h"
 
 int Enj_Lua_GlyphOnPreload(lua_State *L){
     int tmpidx = lua_gettop(L);

@@ -7,22 +7,22 @@
 #include <SDL_render.h>
 #include <lua.hpp>
 
-#include "../../core/allocator.h"
-#include "../../core/act_lua.h"
-#include "../../core/texture.h"
-#include "../../core/glyph.h"
+#include "../../../../core/allocator.h"
+#include "../../../../core/act_lua.h"
+#include "../../../../core/graphics/sdl/texture.h"
+#include "../../../../core/graphics/sdl/glyph.h"
 
-#include "../util/multi_dispatch.hpp"
+#include "../../../util/multi_dispatch.hpp"
 
-#include "../luaasset.h"
-#include "../luafont.h"
+#include "../../../luaasset.h"
+#include "../../../graphics/luafont.h"
 #include "font_binder.hpp"
-#include "font_lua_load.h"
+#include "../../font_lua_load.h"
 
 #include "texture_binder.hpp"
-#include "texture_lua_load.h"
+#include "../../texture_lua_load.h"
 #include "glyph_binder.hpp"
-#include "glyph_lua_load.h"
+#include "../../glyph_lua_load.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

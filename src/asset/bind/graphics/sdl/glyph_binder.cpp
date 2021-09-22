@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "../../core/glyph.h"
+#include "../../../../core/graphics/sdl/glyph.h"
 #include "glyph_binder.hpp"
 
 

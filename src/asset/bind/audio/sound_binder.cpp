@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "../../core/sound.h"
+#include "../../../core/sound.h"
 #include "sound_binder.hpp"
 
 

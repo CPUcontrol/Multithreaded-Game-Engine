@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "../../core/texture.h"
+#include "../../../../core/graphics/sdl/texture.h"
 #include "texture_binder.hpp"
 
 

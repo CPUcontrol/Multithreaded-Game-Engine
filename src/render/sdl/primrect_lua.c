@@ -1,26 +1,21 @@
-#include <math.h>
-
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
 
-#include "sprite.h"
-#include "sprite_lua.h"
+#include "primrect.h"
+#include "primrect_lua.h"
 
-#include "../core/allocator.h"
-#include "../core/lua_extra.h"
+#include "../../core/allocator.h"
+#include "../../core/lua_extra.h"
 
-#include "../core/glyph.h"
-
-#include "../asset/luaasset.h"
-#include "../asset/glyph_lua.h"
+#include "../../asset/luaasset.h"
 
 #include "renderlist.h"
 
 #include "luarendernode.h"
 #include "lua_extra_render.h"
 
-static int luadestroysprite(lua_State *L){
+static int luadestroyprimrect(lua_State *L){
     int tmpidx = lua_gettop(L);
     lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
     lua_getfield(L, tmpidx+1, "render");
@@ -41,12 +36,6 @@ static int luadestroysprite(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    lua_getiuservalue(L, 1, 2);
-    luaasset *la_glyph = (luaasset *)lua_touserdata(L, tmpidx+4);
-    --la_glyph->refcount;
-    lua_pushnil(L);
-    lua_setiuservalue(L, 1, 2);
-
     Enj_RenderList *parent = lrn->parent;
 
     (*rn->onfreedata)(rn->data, rn->ctx, rn->allocdata);
@@ -58,7 +47,7 @@ static int luadestroysprite(lua_State *L){
     lua_getiuservalue(L, 1, 1);
     lua_pushvalue(L, 1);
     lua_pushnil(L);
-    lua_settable(L, tmpidx+5);
+    lua_settable(L, tmpidx+4);
 
     lua_pushnil(L);
     lua_setiuservalue(L, 1, 1);
@@ -66,7 +55,7 @@ static int luadestroysprite(lua_State *L){
     return 0;
 }
 
-static int luagetspritex(lua_State *L){
+static int luagetprimrectx(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -76,12 +65,12 @@ static int luagetspritex(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
-    lua_pushinteger(L, sp->x);
+    lua_pushinteger(L, pr->x);
     return 1;
 }
-static int luasetspritex(lua_State *L){
+static int luasetprimrectx(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -91,7 +80,7 @@ static int luasetspritex(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -100,10 +89,10 @@ static int luasetspritex(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    sp->x = (int)v;
+    pr->x = (int)v;
     return 0;
 }
-static int luagetspritey(lua_State *L){
+static int luagetprimrecty(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -113,12 +102,12 @@ static int luagetspritey(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
-    lua_pushinteger(L, sp->y);
+    lua_pushinteger(L, pr->y);
     return 1;
 }
-static int luasetspritey(lua_State *L){
+static int luasetprimrecty(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -128,7 +117,7 @@ static int luasetspritey(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -137,10 +126,10 @@ static int luasetspritey(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    sp->y = (int)v;
+    pr->y = (int)v;
     return 0;
 }
-static int luagetspritewidth(lua_State *L){
+static int luagetprimrectwidth(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -150,12 +139,12 @@ static int luagetspritewidth(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
-    lua_pushinteger(L, sp->w);
+    lua_pushinteger(L, pr->w);
     return 1;
 }
-static int luasetspritewidth(lua_State *L){
+static int luasetprimrectwidth(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -165,7 +154,7 @@ static int luasetspritewidth(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -174,10 +163,10 @@ static int luasetspritewidth(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    sp->w = (int)v;
+    pr->w = (int)v;
     return 0;
 }
-static int luagetspriteheight(lua_State *L){
+static int luagetprimrectheight(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -187,12 +176,12 @@ static int luagetspriteheight(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
-    lua_pushinteger(L, sp->h);
+    lua_pushinteger(L, pr->h);
     return 1;
 }
-static int luasetspriteheight(lua_State *L){
+static int luasetprimrectheight(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -202,7 +191,7 @@ static int luasetspriteheight(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -211,11 +200,11 @@ static int luasetspriteheight(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    sp->h = (int)v;
+    pr->h = (int)v;
     return 0;
 }
 
-static int luagetspriteglyph(lua_State *L){
+static int luagetprimrectstroker(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -225,11 +214,12 @@ static int luagetspriteglyph(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    lua_getiuservalue(L, 1, 2);
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+
+    lua_pushinteger(L, pr->stroke[0]);
     return 1;
 }
-
-static int luasetspriteglyph(lua_State *L){
+static int luasetprimrectstroker(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -239,60 +229,7 @@ static int luasetspriteglyph(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
-
-    lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
-    lua_getfield(L, 3, "asset");
-    lua_getfield(L, 4, "glyph");
-    lua_getmetatable(L, 2);
-    if(!lua_compare(L, 5, 6, LUA_OPEQ)){
-        lua_pushliteral(L, "assigned incompatible type");
-        return Enj_Lua_Error(L);
-    }
-
-
-    luaasset *la_glyph = (luaasset *)lua_touserdata(L, 2);
-
-    sp->glyph = (Enj_Glyph *)la_glyph->data;
-
-    lua_getiuservalue(L, 1, 2);
-    luaasset *la_glyph_old = (luaasset *)lua_touserdata(L, 7);
-
-    ++la_glyph->refcount;
-    --la_glyph_old->refcount;
-
-    lua_pushvalue(L, 2);
-    lua_setiuservalue(L, 1, 2);
-
-    return 0;
-}
-
-static int luagetspriter(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
-
-    if(!rn){
-        lua_pushliteral(L, "render node already destroyed");
-        return Enj_Lua_Error(L);
-    }
-
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
-
-    lua_pushinteger(L, sp->fill[0]);
-    return 1;
-}
-static int luasetspriter(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
-
-    if(!rn){
-        lua_pushliteral(L, "render node already destroyed");
-        return Enj_Lua_Error(L);
-    }
-
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -301,11 +238,11 @@ static int luasetspriter(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    sp->fill[0] = (unsigned char)v;
+    pr->stroke[0] = (unsigned char)v;
     return 0;
 }
 
-static int luagetspriteg(lua_State *L){
+static int luagetprimrectstrokeg(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -315,12 +252,12 @@ static int luagetspriteg(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
-    lua_pushinteger(L, sp->fill[1]);
+    lua_pushinteger(L, pr->stroke[1]);
     return 1;
 }
-static int luasetspriteg(lua_State *L){
+static int luasetprimrectstrokeg(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -330,7 +267,7 @@ static int luasetspriteg(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -339,11 +276,11 @@ static int luasetspriteg(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    sp->fill[1] = (unsigned char)v;
+    pr->stroke[1] = (unsigned char)v;
     return 0;
 }
 
-static int luagetspriteb(lua_State *L){
+static int luagetprimrectstrokeb(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -353,12 +290,12 @@ static int luagetspriteb(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
-    lua_pushinteger(L, sp->fill[2]);
+    lua_pushinteger(L, pr->stroke[2]);
     return 1;
 }
-static int luasetspriteb(lua_State *L){
+static int luasetprimrectstrokeb(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -368,7 +305,7 @@ static int luasetspriteb(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -377,11 +314,11 @@ static int luasetspriteb(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    sp->fill[2] = (unsigned char)v;
+    pr->stroke[2] = (unsigned char)v;
     return 0;
 }
 
-static int luagetspritea(lua_State *L){
+static int luagetprimrectstrokea(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -391,12 +328,12 @@ static int luagetspritea(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
-    lua_pushinteger(L, sp->fill[3]);
+    lua_pushinteger(L, pr->stroke[3]);
     return 1;
 }
-static int luasetspritea(lua_State *L){
+static int luasetprimrectstrokea(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -406,7 +343,7 @@ static int luasetspritea(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -415,12 +352,12 @@ static int luasetspritea(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    sp->fill[3] = (unsigned char)v;
+    pr->stroke[3] = (unsigned char)v;
     return 0;
 }
 
 
-static int luagetspritecenterx(lua_State *L){
+static int luagetprimrectfillr(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -430,12 +367,12 @@ static int luagetspritecenterx(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
-    lua_pushinteger(L, sp->xcen);
+    lua_pushinteger(L, pr->fill[0]);
     return 1;
 }
-static int luasetspritecenterx(lua_State *L){
+static int luasetprimrectfillr(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -445,7 +382,7 @@ static int luasetspritecenterx(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -454,10 +391,11 @@ static int luasetspritecenterx(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    sp->xcen = (int)v;
+    pr->fill[0] = (unsigned char)v;
     return 0;
 }
-static int luagetspritecentery(lua_State *L){
+
+static int luagetprimrectfillg(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -467,12 +405,12 @@ static int luagetspritecentery(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
-    lua_pushinteger(L, sp->ycen);
+    lua_pushinteger(L, pr->fill[1]);
     return 1;
 }
-static int luasetspritecentery(lua_State *L){
+static int luasetprimrectfillg(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -482,7 +420,7 @@ static int luasetspritecentery(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -491,11 +429,11 @@ static int luasetspritecentery(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    sp->ycen = (int)v;
+    pr->fill[1] = (unsigned char)v;
     return 0;
 }
 
-static int luagetspriteangle(lua_State *L){
+static int luagetprimrectfillb(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -505,12 +443,12 @@ static int luagetspriteangle(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
-    lua_pushnumber(L, 3.1415926535898 / 32768. * (double)sp->angle);
+    lua_pushinteger(L, pr->fill[2]);
     return 1;
 }
-static int luasetspriteangle(lua_State *L){
+static int luasetprimrectfillb(lua_State *L){
     luarendernode *lrn =
         (luarendernode *)lua_touserdata(L, 1);
     Enj_RenderNode *rn = lrn->rn;
@@ -520,74 +458,181 @@ static int luasetspriteangle(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
 
-    int isnum;
-    lua_Number v = lua_tonumberx(L, 2, &isnum);
-    if(!isnum){
+    int isint;
+    lua_Integer v = lua_tointegerx(L, 2, &isint);
+    if(!isint){
         lua_pushliteral(L, "assigned incompatible type");
         return Enj_Lua_Error(L);
     }
 
-    //Round to nearest int in [0, 65536)
-    double res = 32768. / 3.1415926535898 * v;
-    res = floor(res + 0.5);
-    res = fmod(res, 65536.);
-    //Convert to integral type - now in interval (-65536, 65536)
-    long resround = (long)res;
-    //Add 65536 if res less than zero
-    resround += resround < 0 ? 65536 : 0;
+    pr->fill[2] = (unsigned char)v;
+    return 0;
+}
+
+static int luagetprimrectfilla(lua_State *L){
+    luarendernode *lrn =
+        (luarendernode *)lua_touserdata(L, 1);
+    Enj_RenderNode *rn = lrn->rn;
+
+    if(!rn){
+        lua_pushliteral(L, "render node already destroyed");
+        return Enj_Lua_Error(L);
+    }
+
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+
+    lua_pushinteger(L, pr->fill[3]);
+    return 1;
+}
+static int luasetprimrectfilla(lua_State *L){
+    luarendernode *lrn =
+        (luarendernode *)lua_touserdata(L, 1);
+    Enj_RenderNode *rn = lrn->rn;
+
+    if(!rn){
+        lua_pushliteral(L, "render node already destroyed");
+        return Enj_Lua_Error(L);
+    }
+
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+
+    int isint;
+    lua_Integer v = lua_tointegerx(L, 2, &isint);
+    if(!isint){
+        lua_pushliteral(L, "assigned incompatible type");
+        return Enj_Lua_Error(L);
+    }
+
+    pr->fill[3] = (unsigned char)v;
+    return 0;
+}
 
 
-    sp->angle = (unsigned short)resround;
+static int luagetprimrectcenterx(lua_State *L){
+    luarendernode *lrn =
+        (luarendernode *)lua_touserdata(L, 1);
+    Enj_RenderNode *rn = lrn->rn;
+
+    if(!rn){
+        lua_pushliteral(L, "render node already destroyed");
+        return Enj_Lua_Error(L);
+    }
+
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+
+    lua_pushinteger(L, pr->xcen);
+    return 1;
+}
+static int luasetprimrectcenterx(lua_State *L){
+    luarendernode *lrn =
+        (luarendernode *)lua_touserdata(L, 1);
+    Enj_RenderNode *rn = lrn->rn;
+
+    if(!rn){
+        lua_pushliteral(L, "render node already destroyed");
+        return Enj_Lua_Error(L);
+    }
+
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+
+    int isint;
+    lua_Integer v = lua_tointegerx(L, 2, &isint);
+    if(!isint){
+        lua_pushliteral(L, "assigned incompatible type");
+        return Enj_Lua_Error(L);
+    }
+
+    pr->xcen = (int)v;
+    return 0;
+}
+static int luagetprimrectcentery(lua_State *L){
+    luarendernode *lrn =
+        (luarendernode *)lua_touserdata(L, 1);
+    Enj_RenderNode *rn = lrn->rn;
+
+    if(!rn){
+        lua_pushliteral(L, "render node already destroyed");
+        return Enj_Lua_Error(L);
+    }
+
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+
+    lua_pushinteger(L, pr->ycen);
+    return 1;
+}
+static int luasetprimrectcentery(lua_State *L){
+    luarendernode *lrn =
+        (luarendernode *)lua_touserdata(L, 1);
+    Enj_RenderNode *rn = lrn->rn;
+
+    if(!rn){
+        lua_pushliteral(L, "render node already destroyed");
+        return Enj_Lua_Error(L);
+    }
+
+    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+
+    int isint;
+    lua_Integer v = lua_tointegerx(L, 2, &isint);
+    if(!isint){
+        lua_pushliteral(L, "assigned incompatible type");
+        return Enj_Lua_Error(L);
+    }
+
+    pr->ycen = (int)v;
     return 0;
 }
 
 
 
-
-void bindsprite(
+void bindprimrect(
     lua_State *L,
     SDL_Renderer *rend,
-    Enj_Allocator *allocsprite
+    Enj_Allocator *allocprimrect
 )
 {
     lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
     lua_getfield(L, 1, "render");
-    //spritemeta
+    //primrectmeta
     lua_createtable(L, 0, 4);
 
     //methods
     lua_createtable(L, 0, 1);
-    lua_pushcfunction(L, luadestroysprite);
+    lua_pushcfunction(L, luadestroyprimrect);
     lua_setfield(L, 4, "destroy");
 
     //gets
-    lua_createtable(L, 0, 14);
-    lua_pushcfunction(L, luagetspritex);
+    lua_createtable(L, 0, 16);
+    lua_pushcfunction(L, luagetprimrectx);
     lua_setfield(L, 5, "x");
-    lua_pushcfunction(L, luagetspritey);
+    lua_pushcfunction(L, luagetprimrecty);
     lua_setfield(L, 5, "y");
-    lua_pushcfunction(L, luagetspritewidth);
+    lua_pushcfunction(L, luagetprimrectwidth);
     lua_setfield(L, 5, "width");
-    lua_pushcfunction(L, luagetspriteheight);
+    lua_pushcfunction(L, luagetprimrectheight);
     lua_setfield(L, 5, "height");
-    lua_pushcfunction(L, luagetspriter);
-    lua_setfield(L, 5, "r");
-    lua_pushcfunction(L, luagetspriteg);
-    lua_setfield(L, 5, "g");
-    lua_pushcfunction(L, luagetspriteb);
-    lua_setfield(L, 5, "b");
-    lua_pushcfunction(L, luagetspritea);
-    lua_setfield(L, 5, "a");
-    lua_pushcfunction(L, luagetspritecenterx);
+    lua_pushcfunction(L, luagetprimrectfillr);
+    lua_setfield(L, 5, "fill_r");
+    lua_pushcfunction(L, luagetprimrectfillg);
+    lua_setfield(L, 5, "fill_g");
+    lua_pushcfunction(L, luagetprimrectfillb);
+    lua_setfield(L, 5, "fill_b");
+    lua_pushcfunction(L, luagetprimrectfilla);
+    lua_setfield(L, 5, "fill_a");
+    lua_pushcfunction(L, luagetprimrectstroker);
+    lua_setfield(L, 5, "stroke_r");
+    lua_pushcfunction(L, luagetprimrectstrokeg);
+    lua_setfield(L, 5, "stroke_g");
+    lua_pushcfunction(L, luagetprimrectstrokeb);
+    lua_setfield(L, 5, "stroke_b");
+    lua_pushcfunction(L, luagetprimrectstrokea);
+    lua_setfield(L, 5, "stroke_a");
+    lua_pushcfunction(L, luagetprimrectcenterx);
     lua_setfield(L, 5, "pivot_x");
-    lua_pushcfunction(L, luagetspritecentery);
+    lua_pushcfunction(L, luagetprimrectcentery);
     lua_setfield(L, 5, "pivot_y");
-    lua_pushcfunction(L, luagetspriteangle);
-    lua_setfield(L, 5, "angle");
-    lua_pushcfunction(L, luagetspriteglyph);
-    lua_setfield(L, 5, "glyph");
     lua_pushcfunction(L, Enj_Lua_GetRenderNodePriority);
     lua_setfield(L, 5, "priority");
     lua_pushcfunction(L, Enj_Lua_GetRenderNodeActive);
@@ -597,31 +642,35 @@ void bindsprite(
     lua_setfield(L, 3, "__index");
 
     //sets
-    lua_createtable(L, 0, 14);
-    lua_pushcfunction(L, luasetspritex);
+    lua_createtable(L, 0, 16);
+    lua_pushcfunction(L, luasetprimrectx);
     lua_setfield(L, 4, "x");
-    lua_pushcfunction(L, luasetspritey);
+    lua_pushcfunction(L, luasetprimrecty);
     lua_setfield(L, 4, "y");
-    lua_pushcfunction(L, luasetspritewidth);
+    lua_pushcfunction(L, luasetprimrectwidth);
     lua_setfield(L, 4, "width");
-    lua_pushcfunction(L, luasetspriteheight);
+    lua_pushcfunction(L, luasetprimrectheight);
     lua_setfield(L, 4, "height");
-    lua_pushcfunction(L, luasetspriter);
-    lua_setfield(L, 4, "r");
-    lua_pushcfunction(L, luasetspriteg);
-    lua_setfield(L, 4, "g");
-    lua_pushcfunction(L, luasetspriteb);
-    lua_setfield(L, 4, "b");
-    lua_pushcfunction(L, luasetspritea);
-    lua_setfield(L, 4, "a");
-    lua_pushcfunction(L, luasetspritecenterx);
-    lua_setfield(L, 4, "x_pivot");
-    lua_pushcfunction(L, luasetspritecentery);
-    lua_setfield(L, 4, "y_pivot");
-    lua_pushcfunction(L, luasetspriteangle);
-    lua_setfield(L, 4, "angle");
-    lua_pushcfunction(L, luasetspriteglyph);
-    lua_setfield(L, 4, "glyph");
+    lua_pushcfunction(L, luasetprimrectfillr);
+    lua_setfield(L, 4, "fill_r");
+    lua_pushcfunction(L, luasetprimrectfillg);
+    lua_setfield(L, 4, "fill_g");
+    lua_pushcfunction(L, luasetprimrectfillb);
+    lua_setfield(L, 4, "fill_b");
+    lua_pushcfunction(L, luasetprimrectfilla);
+    lua_setfield(L, 4, "fill_a");
+    lua_pushcfunction(L, luasetprimrectstroker);
+    lua_setfield(L, 4, "stroke_r");
+    lua_pushcfunction(L, luasetprimrectstrokeg);
+    lua_setfield(L, 4, "stroke_g");
+    lua_pushcfunction(L, luasetprimrectstrokeb);
+    lua_setfield(L, 4, "stroke_b");
+    lua_pushcfunction(L, luasetprimrectstrokea);
+    lua_setfield(L, 4, "stroke_a");
+    lua_pushcfunction(L, luasetprimrectcenterx);
+    lua_setfield(L, 4, "pivot_x");
+    lua_pushcfunction(L, luasetprimrectcentery);
+    lua_setfield(L, 4, "pivot_y");
     lua_pushcfunction(L, Enj_Lua_SetRenderNodePriority);
     lua_setfield(L, 4, "priority");
     lua_pushcfunction(L, Enj_Lua_SetRenderNodeActive);
@@ -631,7 +680,7 @@ void bindsprite(
     lua_setfield(L, 3, "__newindex");
 
     //rest of the meta
-    lua_pushliteral(L, "sprite");
+    lua_pushliteral(L, "primrect");
     lua_pushvalue(L, 4);
     lua_setfield(L, 3, "__metatable");
 

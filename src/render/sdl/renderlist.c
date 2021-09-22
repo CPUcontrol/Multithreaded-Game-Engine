@@ -1,6 +1,6 @@
 #include "renderlist.h"
 
-#include "../core/allocator.h"
+#include "../../core/allocator.h"
 
 void Enj_RenderListInit(Enj_RenderList *rl, Enj_Allocator *an){
     rl->allocnode = an;

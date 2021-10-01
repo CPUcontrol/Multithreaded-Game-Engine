@@ -55,6 +55,7 @@ static int luadestroysprite(lua_State *L){
     lrn->rn = NULL;
 
     //Remove from parent luarendernode's table
+    lua_getiuservalue(L, 1, 1);
     lua_pushvalue(L, 1);
     lua_pushnil(L);
     lua_settable(L, tmpidx+5);

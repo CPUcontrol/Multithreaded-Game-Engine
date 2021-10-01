@@ -1,4 +1,0 @@
-#pragma once
-
-#cmakedefine APP_NAME "@APP_NAME@"
-#cmakedefine APP_COMPANY "@APP_COMPANY@"

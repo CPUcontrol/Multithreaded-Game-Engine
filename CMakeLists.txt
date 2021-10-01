@@ -3,10 +3,13 @@ project (sdlapp)
 
 set (APP_NAME "Untitled" CACHE PATH "Name of app")
 set (APP_COMPANY "Cycloid" CACHE PATH "Name of app company")
+
 set (DATA_DIRECTORY "" CACHE PATH "Path to directory containing data for the app")
 
-
-configure_file(appconfig.h.in appconfig.h @ONLY)
+add_compile_definitions(
+    "APP_NAME=\"${APP_NAME}\""
+    "APP_COMPANY=\"${APP_COMPANY}\""
+)
 
 set (CORE_SOURCE
     src/core/allocator.c
@@ -245,8 +248,6 @@ target_include_directories(main PRIVATE "${CMAKE_SOURCE_DIR}/lua/include")
 target_include_directories(main PRIVATE "${CMAKE_SOURCE_DIR}/zlib/include")
 target_include_directories(main PRIVATE "${CMAKE_SOURCE_DIR}/libpng/include")
 target_include_directories(main PRIVATE "${CMAKE_SOURCE_DIR}/freetype/include")
-
-target_include_directories(main PRIVATE "${CMAKE_BINARY_DIR}")
 
 target_link_libraries (main PUBLIC core
     ${SDL2_LIB}

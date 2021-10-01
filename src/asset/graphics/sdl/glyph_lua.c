@@ -6,7 +6,7 @@
 
 #include "../glyph_lua.h"
 
-#include "../../../core/graphics/sdl/glyph.h"
+#include "../../../core/graphics/sdl/glyph_sdl.h"
 
 #include "../../lua_extra_asset.h"
 #include "../../luaasset.h"
@@ -15,14 +15,14 @@
 static int luagetglyphwidth(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
-    lua_pushinteger(L, ((Enj_Glyph *)la->data)->rect.w);
+    lua_pushinteger(L, ((Enj_Glyph_SDL *)la->data)->rect.w);
     return 1;
 }
 
 static int luagetglyphheight(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
-    lua_pushinteger(L, ((Enj_Glyph *)la->data)->rect.h);
+    lua_pushinteger(L, ((Enj_Glyph_SDL *)la->data)->rect.h);
     return 1;
 }
 

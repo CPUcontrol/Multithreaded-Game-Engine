@@ -10,7 +10,7 @@
 #include "../../core/allocator.h"
 #include "../../core/lua_extra.h"
 
-#include "../../core/graphics/sdl/glyph.h"
+#include "../../core/graphics/sdl/glyph_sdl.h"
 
 #include "../../asset/luaasset.h"
 #include "../../asset/graphics/glyph_lua.h"
@@ -253,7 +253,7 @@ static int luasetspriteglyph(lua_State *L){
 
     luaasset *la_glyph = (luaasset *)lua_touserdata(L, 2);
 
-    sp->glyph = (Enj_Glyph *)la_glyph->data;
+    sp->glyph = (Enj_Glyph_SDL *)la_glyph->data;
 
     lua_getiuservalue(L, 1, 2);
     luaasset *la_glyph_old = (luaasset *)lua_touserdata(L, 7);

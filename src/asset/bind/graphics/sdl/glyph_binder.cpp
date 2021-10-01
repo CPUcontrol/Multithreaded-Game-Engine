@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "../../../../core/graphics/sdl/glyph.h"
+#include "../../../../core/graphics/sdl/glyph_sdl.h"
 #include "glyph_binder.hpp"
 
 
@@ -9,10 +9,10 @@ glyph_binder::glyph_binder(
     lua_State *L
 ): dispatch(md), Lmain(L)
 {
-    buf = malloc((1<<12)*sizeof(Enj_Glyph));
+    buf = malloc((1<<12)*sizeof(Enj_Glyph_SDL));
     if(!buf) return;
 
-    Enj_InitPoolAllocator(&alloc, &dat, buf, (1<<12)*sizeof(Enj_Glyph), sizeof(Enj_Glyph));
+    Enj_InitPoolAllocator(&alloc, &dat, buf, (1<<12)*sizeof(Enj_Glyph_SDL), sizeof(Enj_Glyph_SDL));
 }
 
 glyph_binder::~glyph_binder(){

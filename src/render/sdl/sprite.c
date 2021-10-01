@@ -2,8 +2,8 @@
 
 #include "sprite.h"
 #include "../../core/allocator.h"
-#include "../../core/graphics/sdl/glyph.h"
-#include "../../core/graphics/sdl/texture.h"
+#include "../../core/graphics/sdl/glyph_sdl.h"
+#include "../../core/graphics/sdl/texture_sdl.h"
 
 void Enj_Sprite_OnFree(void *d, void *ctx, Enj_Allocator *a){
     Enj_Sprite *sp = (Enj_Sprite *)d;

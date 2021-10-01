@@ -7,8 +7,8 @@
 
 #include "../../../../core/allocator.h"
 #include "../../../../core/act_lua.h"
-#include "../../../../core/graphics/sdl/glyph.h"
-#include "../../../../core/graphics/sdl/texture.h"
+#include "../../../../core/graphics/sdl/glyph_sdl.h"
+#include "../../../../core/graphics/sdl/texture_sdl.h"
 
 #include "../../../util/multi_dispatch.hpp"
 
@@ -29,7 +29,7 @@ int Enj_Lua_GlyphOnPreload(lua_State *L){
 
     luaasset *la_texture = (luaasset *)lua_touserdata(L, 2);
     if(!(la_texture->flag & 1<<0)) return 0;
-    Enj_Texture *e_texture = (Enj_Texture *)la_texture->data;
+    Enj_Texture_SDL *e_texture = (Enj_Texture_SDL *)la_texture->data;
 
     lua_Integer x;
     lua_Integer y;
@@ -71,7 +71,7 @@ int Enj_Lua_GlyphOnPreload(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
     glyph_binder *ctx = (glyph_binder *)la->ctx;
-    Enj_Glyph *e = (Enj_Glyph *)Enj_Alloc(&ctx->alloc, sizeof(Enj_Glyph));
+    Enj_Glyph_SDL *e = (Enj_Glyph_SDL *)Enj_Alloc(&ctx->alloc, sizeof(Enj_Glyph_SDL));
     if(!e) return 0;
 
     e->rect.x = (int)x;
@@ -96,7 +96,7 @@ int Enj_Lua_GlyphOnPreload(lua_State *L){
 }
 int Enj_Lua_GlyphOnUnload(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
-    Enj_Glyph *e = (Enj_Glyph *)la->data;
+    Enj_Glyph_SDL *e = (Enj_Glyph_SDL *)la->data;
     glyph_binder *ctx = (glyph_binder *)la->ctx;
 
     lua_getiuservalue(L, 1, 1);

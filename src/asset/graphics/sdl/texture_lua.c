@@ -6,7 +6,7 @@
 
 #include "../texture_lua.h"
 
-#include "../../../core/graphics/sdl/texture.h"
+#include "../../../core/graphics/sdl/texture_sdl.h"
 
 #include "../../lua_extra_asset.h"
 #include "../../luaasset.h"
@@ -15,14 +15,14 @@
 static int luagettexturewidth(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
-    lua_pushinteger(L, ((Enj_Texture *)la->data)->width);
+    lua_pushinteger(L, ((Enj_Texture_SDL *)la->data)->width);
     return 1;
 }
 
 static int luagettextureheight(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
-    lua_pushinteger(L, ((Enj_Texture *)la->data)->height);
+    lua_pushinteger(L, ((Enj_Texture_SDL *)la->data)->height);
     return 1;
 }
 

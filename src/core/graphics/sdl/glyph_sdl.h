@@ -5,12 +5,12 @@
 extern "C" {
 #endif
 
-typedef struct Enj_Texture Enj_Texture;
+typedef struct Enj_Texture_SDL Enj_Texture_SDL;
 
-typedef struct Enj_Glyph{
+typedef struct Enj_Glyph_SDL{
     SDL_Rect rect;
-    Enj_Texture *texture;
-}Enj_Glyph;
+    Enj_Texture_SDL *texture;
+}Enj_Glyph_SDL;
 
 #ifdef __cplusplus
 }

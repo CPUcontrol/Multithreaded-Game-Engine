@@ -12,7 +12,7 @@
 #include "../../core/allocator.h"
 #include "../../core/lua_extra.h"
 
-#include "../../core/graphics/sdl/glyph.h"
+#include "../../core/graphics/sdl/glyph_sdl.h"
 
 #include "../../asset/luaasset.h"
 #include "../../asset/graphics/glyph_lua.h"
@@ -82,7 +82,7 @@ static int luacreatesprite_fromrenderlist(lua_State *L){
     lua_getfield(L, tmpidx+2, "sprite");
     lua_setmetatable(L, tmpidx+8);
 
-    sp->glyph = (Enj_Glyph *)la_glyph->data;
+    sp->glyph = (Enj_Glyph_SDL *)la_glyph->data;
     ++la_glyph->refcount;
     lua_pushvalue(L, 2);
     lua_setiuservalue(L, tmpidx+8, 2);

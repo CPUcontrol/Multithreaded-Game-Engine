@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "../../../../core/graphics/sdl/texture.h"
+#include "../../../../core/graphics/sdl/texture_sdl.h"
 #include "texture_binder.hpp"
 
 
@@ -14,7 +14,7 @@ texture_binder::texture_binder(
     buf = malloc(1<<12);
     if(!buf) return;
 
-    Enj_InitPoolAllocator(&alloc, &dat, buf, 1<<12, sizeof(Enj_Texture));
+    Enj_InitPoolAllocator(&alloc, &dat, buf, 1<<12, sizeof(Enj_Texture_SDL));
 }
 
 texture_binder::~texture_binder(){

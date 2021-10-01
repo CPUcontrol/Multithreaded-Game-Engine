@@ -9,8 +9,8 @@
 
 #include "../../../../core/allocator.h"
 #include "../../../../core/act_lua.h"
-#include "../../../../core/graphics/sdl/texture.h"
-#include "../../../../core/graphics/sdl/glyph.h"
+#include "../../../../core/graphics/sdl/texture_sdl.h"
+#include "../../../../core/graphics/sdl/glyph_sdl.h"
 
 #include "../../../util/multi_dispatch.hpp"
 
@@ -40,7 +40,7 @@ typedef struct glyphpair{
     int advance;
 
     size_t texture_id;
-    Enj_Glyph *glyph;
+    Enj_Glyph_SDL *glyph;
 }glyphpair;
 
 static int luagetnullchar(lua_State *L){
@@ -263,8 +263,8 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                 dimpow, numchars, fontheight]() {
 
 
-                Enj_Texture *texture = (Enj_Texture *)
-                    Enj_Alloc(&ctx->texturebinder.alloc, sizeof(Enj_Texture));
+                Enj_Texture_SDL *texture = (Enj_Texture_SDL *)
+                    Enj_Alloc(&ctx->texturebinder.alloc, sizeof(Enj_Texture_SDL));
                 if(!texture){
                     free(atlas);
                     free(glyphpairs);
@@ -274,8 +274,8 @@ int Enj_Lua_FontOnPreload(lua_State *L){
 
 
                 for(size_t i = 0; i < numchars+1; i++){
-                    glyphpairs[i].glyph = (Enj_Glyph *)
-                        Enj_Alloc(&ctx->glyphbinder.alloc, sizeof(Enj_Glyph));
+                    glyphpairs[i].glyph = (Enj_Glyph_SDL *)
+                        Enj_Alloc(&ctx->glyphbinder.alloc, sizeof(Enj_Glyph_SDL));
 
                     if(!glyphpairs[i].glyph){
                         for(size_t k = 0; k < i; k++){

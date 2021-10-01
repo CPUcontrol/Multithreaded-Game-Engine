@@ -29,8 +29,8 @@
 #include "core/keyboard_lua.h"
 #include "core/lua_extra.h"
 
-#include "core/graphics/sdl/texture.h"
-#include "core/graphics/sdl/glyph.h"
+#include "core/graphics/texture.h"
+#include "core/graphics/glyph.h"
 
 #include "asset/luaasset.h"
 #include "asset/asset_lua.h"

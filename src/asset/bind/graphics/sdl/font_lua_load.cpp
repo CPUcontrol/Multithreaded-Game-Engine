@@ -166,47 +166,58 @@ int Enj_Lua_FontOnPreload(lua_State *L){
             size_t prog = 0;
 
 
+            size_t extrabuffers = 0;
+
             unsigned char dimpow;
 
-            for(dimpow = 8; dimpow < 12; dimpow++){
-                //Try to fit all glyphs into a single pow-of-2 texture
-                //TODO: Improve naive algorithm
-                int xpen = 0;
-                int ypen = 0;
-                int rowheight = 0;
-                for(i = prog; i < numchars+1; i++){
-                    int iw = glyphpairs[i].w;
-                    int ih = glyphpairs[i].h;
-                    //Glyph too wide
-                    if (iw + 2*pad > 1<<dimpow){
-                        goto fontrect_fit_fail;
+            while(true){
+                for(dimpow = 8; dimpow < 12; dimpow++){
+                    //Try to fit all glyphs into a single pow-of-2 texture
+                    //TODO: Improve naive algorithm
+                    int xpen = 0;
+                    int ypen = 0;
+                    int rowheight = 0;
+                    for(i = prog; i < numchars+1; i++){
+                        int iw = glyphpairs[i].w;
+                        int ih = glyphpairs[i].h;
+                        //Glyph too wide
+                        if (iw + 2*pad > 1<<dimpow){
+                            goto fontrect_fit_fail;
+                        }
+                        rowheight = ih > rowheight ? ih : rowheight;
+
+                        if(xpen + iw + 2*pad > 1<<dimpow){
+                            xpen = 0;
+                            ypen += rowheight + 2*pad;
+                        }
+                        //Not enough height for glyph
+                        if(ypen + rowheight + 2*pad > 1<<dimpow){
+                            goto fontrect_fit_fail;
+                        }
+
+
+                        glyphpairs[i].x = xpen + pad;
+                        glyphpairs[i].y = ypen + pad;
+                        //Assign texture id as buffer aka number of textures
+                        glyphpairs[i].texture_id = extrabuffers;
+
+                        xpen += iw + 2*pad;
                     }
-                    rowheight = ih > rowheight ? ih : rowheight;
+                    goto fontrect_success;
 
-                    if(xpen + iw + 2*pad > 1<<dimpow){
-                        xpen = 0;
-                        ypen += rowheight + 2*pad;
-                    }
-                    //Not enough height for glyph
-                    if(ypen + rowheight + 2*pad > 1<<dimpow){
-                        goto fontrect_fit_fail;
-                    }
-
-
-                    glyphpairs[i].x = xpen + pad;
-                    glyphpairs[i].y = ypen + pad;
-
-                    xpen += iw + 2*pad;
+                fontrect_fit_fail:
+                    continue;
                 }
-                goto fontrect_success;
+                //Implement multi texture by counting extra buffers needed
+                //instead of dynamic array
+                //No progress made means failure as a whole
+                if (i == prog) goto fontrect_fail;
 
-            fontrect_fit_fail:
-                continue;
+                ++extrabuffers;
+                prog = i;
             }
-            //TODO implement multi texture using dynamic array
-            //No progress made means failure as a whole
-            //if(i == prog) goto fontrect_fail;
-        //fontrect_fail:
+
+        fontrect_fail:
             {
                 for(size_t i = 0; i < numchars+1; i++){
                     FT_Done_Glyph(ftglyphs[i]);
@@ -224,9 +235,73 @@ int Enj_Lua_FontOnPreload(lua_State *L){
             }
 
         fontrect_success:
-            size_t atlassize = 4 * (1<<dimpow) * (1<<dimpow);
-            unsigned char *atlas =
+
+            //TODO create and fill extra buffers before last one
+            unsigned char **atlasarray = (unsigned char **)
+                malloc((extrabuffers+1)*sizeof(unsigned char *));
+            if(!atlasarray){
+                for(size_t i = 0; i < numchars+1; i++){
+                    FT_Done_Glyph(ftglyphs[i]);
+                }
+                free(ftglyphs);
+                FT_Done_Face(face);
+                FT_Done_FreeType(ft);
+                free(glyphpairs);
+
+                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                ctx->dispatch.mq.q.push([la, ctx](){
+                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                });
+                return;
+            }
+
+            for(size_t i = 0; i < extrabuffers; i++){
+                atlasarray[i] = (unsigned char *)calloc(4 * (1<<11) * (1<<11), 1);
+                if(!atlasarray[i]){
+                    for(size_t k = 0; k < i; k++){
+                        free(atlasarray[k]);
+                    }
+                    free(atlasarray);
+
+                    for(size_t i = 0; i < numchars+1; i++){
+                        FT_Done_Glyph(ftglyphs[i]);
+                    }
+                    free(ftglyphs);
+                    FT_Done_Face(face);
+                    FT_Done_FreeType(ft);
+                    free(glyphpairs);
+
+                    std::lock_guard lock(ctx->dispatch.mq.mtx);
+                    ctx->dispatch.mq.q.push([la, ctx](){
+                        luafinishpreloadasset(ctx->Lmain, la, 1);
+                    });
+                    return;
+                }
+            }
+
+            size_t atlassize = 4 * ((size_t)1<<dimpow) * ((size_t)1<<dimpow);
+            atlasarray[extrabuffers] =
                 (unsigned char *)calloc(atlassize, 1);
+            if(!atlasarray[extrabuffers]){
+                for(size_t i = 0; i < extrabuffers; i++){
+                    free(atlasarray[i]);
+                }
+                free(atlasarray);
+
+                for(size_t i = 0; i < numchars+1; i++){
+                    FT_Done_Glyph(ftglyphs[i]);
+                }
+                free(ftglyphs);
+                FT_Done_Face(face);
+                FT_Done_FreeType(ft);
+                free(glyphpairs);
+
+                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                ctx->dispatch.mq.q.push([la, ctx](){
+                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                });
+                return;
+            }
 
 
             for(i = 0; i < numchars+1; i++){
@@ -238,7 +313,8 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                 for(int r = 0; r < gh; r++){
                     for(int c = 0; c < gw; c++){
                         unsigned char *rgba =
-                            atlas + (4*( ((gy + r)<<dimpow) + (gx + c)));
+                            atlasarray[glyphpairs[i].texture_id]
+                                + (4*( ((gy + r)<<dimpow) + (gx + c)));
 
                         FT_BitmapGlyph bmg = (FT_BitmapGlyph)ftglyphs[i];
 
@@ -259,18 +335,8 @@ int Enj_Lua_FontOnPreload(lua_State *L){
             FT_Done_FreeType(ft);
 
             std::lock_guard lock(ctx->dispatch.mq.mtx);
-            ctx->dispatch.mq.q.push([la, ctx, atlas, glyphpairs,
-                dimpow, numchars, fontheight]() {
-
-
-                Enj_Texture_SDL *texture = (Enj_Texture_SDL *)
-                    Enj_Alloc(&ctx->texturebinder.alloc, sizeof(Enj_Texture_SDL));
-                if(!texture){
-                    free(atlas);
-                    free(glyphpairs);
-                    luafinishpreloadasset(ctx->Lmain, la, 1);
-                    return;
-                }
+            ctx->dispatch.mq.q.push([la, ctx, atlasarray, extrabuffers,
+                glyphpairs, dimpow, numchars, fontheight]() {
 
 
                 for(size_t i = 0; i < numchars+1; i++){
@@ -281,7 +347,10 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                         for(size_t k = 0; k < i; k++){
                             Enj_Free(&ctx->glyphbinder.alloc, glyphpairs[k].glyph);
                         }
-                        free(atlas);
+                        for(size_t i = 0; i < extrabuffers+1; i++){
+                            free(atlasarray[i]);
+                        }
+                        free(atlasarray);
                         free(glyphpairs);
                         luafinishpreloadasset(ctx->Lmain, la, 1);
                         return;
@@ -293,15 +362,48 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                     glyphpairs[i].glyph->rect.h = glyphpairs[i].h;
                 }
 
-                texture->width = 1<<dimpow;
-                texture->height = 1<<dimpow;
-                texture->tx = SDL_CreateTexture(ctx->rend,
-                    SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC,
-                    1<<dimpow, 1<<dimpow);
+                Enj_Texture_SDL **texarray = (Enj_Texture_SDL **)
+                    malloc((extrabuffers+1)*sizeof(Enj_Texture_SDL *));
 
-                SDL_UpdateTexture(texture->tx, NULL, atlas, (1<<dimpow) * 4);
-                SDL_SetTextureBlendMode(texture->tx, SDL_BLENDMODE_BLEND);
-                free(atlas);
+                for(size_t i = 0; i < extrabuffers+1; i++){
+                    texarray[i] = (Enj_Texture_SDL *)
+                        Enj_Alloc(&ctx->texturebinder.alloc, sizeof(Enj_Texture_SDL));
+                    if(!texarray[i]){
+                        for(size_t k = 0; k < i; k++){
+                            Enj_Free(&ctx->texturebinder.alloc, texarray[k]);
+                        }
+                        free(texarray);
+                        for(size_t i = 0; i < numchars+1; i++){
+                            Enj_Free(&ctx->glyphbinder.alloc, glyphpairs[i].glyph);
+                        }
+                        for(size_t i = 0; i < extrabuffers+1; i++){
+                            free(atlasarray[i]);
+                        }
+                        free(atlasarray);
+                        free(glyphpairs);
+                        luafinishpreloadasset(ctx->Lmain, la, 1);
+
+                        return;
+                    }
+
+                    unsigned char dim = (i != extrabuffers) ?
+                                            11 : dimpow;
+                    texarray[i]->width = 1<<dim;
+                    texarray[i]->height = 1<<dim;
+                    texarray[i]->tx = SDL_CreateTexture(ctx->rend,
+                        SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC,
+                        1<<dim, 1<<dim);
+                    SDL_UpdateTexture(texarray[i]->tx, NULL, atlasarray[i],
+                        (1<<dim) * 4);
+                    SDL_SetTextureBlendMode(texarray[i]->tx, SDL_BLENDMODE_BLEND);
+
+
+                }
+                for(size_t i = 0; i < extrabuffers+1; i++){
+                    free(atlasarray[i]);
+                }
+                free(atlasarray);
+
 
 
 
@@ -312,23 +414,29 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                 lua_gettable(ctx->Lmain, 1);
                 //Init lua texture
 
-                luaasset *la_texture = (luaasset *)
-                    lua_newuserdatauv(ctx->Lmain, sizeof(luaasset), 0);
-                la_texture->ctx = &ctx->texturebinder;
-                la_texture->data = texture;
-                la_texture->refcount = 1;
-                la_texture->flag = 5;
-                la_texture->onunload = Enj_Lua_TextureOnUnload;
-                la_texture->oncanunload = Enj_Lua_TextureOnCanUnload;
-                lua_getfield(ctx->Lmain, 3, "texture");
-                lua_setmetatable(ctx->Lmain, 5);
+                lua_createtable(ctx->Lmain, extrabuffers+1, 0);
 
+                for(size_t i = 0; i < extrabuffers+1; i++){
+                    luaasset *la_texture = (luaasset *)
+                        lua_newuserdatauv(ctx->Lmain, sizeof(luaasset), 0);
+                    la_texture->ctx = &ctx->texturebinder;
+                    la_texture->data = texarray[i];
+                    la_texture->refcount = 1;
+                    la_texture->flag = 5;
+                    la_texture->onunload = Enj_Lua_TextureOnUnload;
+                    la_texture->oncanunload = Enj_Lua_TextureOnCanUnload;
+                    lua_getfield(ctx->Lmain, 3, "texture");
+                    lua_setmetatable(ctx->Lmain, 6);
+
+                    lua_seti(ctx->Lmain, 5, i+1);
+                }
                 lua_setiuservalue(ctx->Lmain, 4, 2);
 
                 //Init lua glyphs, using the lua texture
 
                 for(size_t i = 0; i < numchars+1; i++){
-                    glyphpairs[i].glyph->texture = texture;
+                    glyphpairs[i].glyph->texture =
+                        texarray[glyphpairs[i].texture_id];
                 }
                 lua_createtable(ctx->Lmain, 0, 0);
                 for(size_t i = 0; i < numchars; i++){
@@ -352,7 +460,9 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                     lua_getfield(ctx->Lmain, 3, "glyph");
                     lua_setmetatable(ctx->Lmain, 7);
                     lua_getiuservalue(ctx->Lmain, 4, 2);
+                    lua_geti(ctx->Lmain, 8, glyphpairs[i].texture_id+1);
                     lua_setiuservalue(ctx->Lmain, 7, 1);
+                    lua_pop(ctx->Lmain, 1);
 
                     //Set uservalue glyph of fontchar
                     lua_setiuservalue(ctx->Lmain, 6, 1);
@@ -381,7 +491,9 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                     lua_getfield(ctx->Lmain, 3, "glyph");
                     lua_setmetatable(ctx->Lmain, 7);
                     lua_getiuservalue(ctx->Lmain, 4, 2);
+                    lua_geti(ctx->Lmain, 8, glyphpairs[numchars].texture_id+1);
                     lua_setiuservalue(ctx->Lmain, 7, 1);
+                    lua_pop(ctx->Lmain, 1);
 
                     //Set uservalue glyph of fontchar
                     lua_setiuservalue(ctx->Lmain, 6, 1);
@@ -402,7 +514,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                 luafont *lf = (luafont *)la->data;
                 lf->height = fontheight;
 
-
+                free(texarray);
                 free(glyphpairs);
 
                 lua_settop(ctx->Lmain, 0);
@@ -439,31 +551,43 @@ int Enj_Lua_FontOnUnload(lua_State *L){
         lua_pop(L, 2);
     }
 
-    //Free texture
-    lua_pushcfunction(L, Enj_Lua_TextureOnUnload);
+    //Free textures
+
     lua_getiuservalue(L, 1, 2);
-    luaasset *la_texture = (luaasset *)lua_touserdata(L, 4);
-    la_texture->refcount = 0;
-    lua_call(L, 1, 0);
-    la_texture->data = NULL;
-    la_texture->flag &= ~(1<<0);
+    lua_pushnil(L);
+    while(lua_next(L, 3) != 0){
+        lua_pushcfunction(L, Enj_Lua_TextureOnUnload);
+        luaasset *la_texture = (luaasset *)lua_touserdata(L, 5);
+        la_texture->refcount = 0;
+        lua_call(L, 1, 0);
+        la_texture->data = NULL;
+        la_texture->flag &= ~(1<<0);
+
+        lua_pop(L, 1);
+    }
 
     return 0;
 }
 int Enj_Lua_FontOnCanUnload(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
-    //Check texture
-    lua_pushcfunction(L, Enj_Lua_TextureOnCanUnload);
+    //Check all textures
     lua_getiuservalue(L, 1, 2);
-    luaasset *la_texture = (luaasset *)lua_touserdata(L, 3);
-    if(la_texture->refcount > 1){
-        lua_pushboolean(L, 0);
-        return 1;
-    }
-    lua_call(L, 1, 1);
-    if(!lua_toboolean(L, 2)){
-        return 1;
+    lua_pushnil(L);
+    while(lua_next(L, 2) != 0){
+        lua_pushcfunction(L, Enj_Lua_TextureOnCanUnload);
+        lua_pushvalue(L, 2);
+        luaasset *la_texture = (luaasset *)lua_touserdata(L, 4);
+        if(la_texture->refcount > 1){
+            lua_pushboolean(L, 0);
+            return 1;
+        }
+        lua_call(L, 1, 1);
+        if(!lua_toboolean(L, 2)){
+            return 1;
+        }
+
+        lua_pop(L, 2);
     }
 
     //Check all glyphs
@@ -485,7 +609,7 @@ int Enj_Lua_FontOnCanUnload(lua_State *L){
             return 1;
         }
 
-        lua_pop(L, 4);
+        lua_pop(L, 3);
     }
     lua_pushboolean(L, 1);
     return 1;

@@ -62,6 +62,9 @@ set (CORE_SOURCE
 
     )
 
+if (APP_RENDER_BACKEND EQUAL "opengl")
+    add_subdirectory(gl3w EXCLUDE_FROM_ALL)
+endif ()
 
 if (MSVC)
     add_library(core ${CORE_SOURCE})

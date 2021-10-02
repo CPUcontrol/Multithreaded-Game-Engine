@@ -1,17 +1,20 @@
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
+#define APP_ENUM_BACKEND_SDL 0
+#define APP_ENUM_BACKEND_OPENGL 1
+
+#ifndef APP_BACKEND
+#define APP_BACKEND APP_ENUM_BACKEND_SDL
 #endif
 
-typedef struct SDL_Window SDL_Window;
-typedef struct Enj_Renderer Enj_Renderer;
+#if APP_BACKEND == APP_ENUM_BACKEND_OPENGL
 
+#include "sdl/render_opengl.h"
+typedef Enj_Renderer_OpenGL Enj_Renderer;
 
-Enj_Renderer * Enj_InitRenderer(SDL_Window *window);
+#else
 
-void Enj_FreeRenderer(Enj_Renderer *r);
+#include "sdl/render_sdl.h"
+typedef Enj_Renderer_SDL Enj_Renderer;
 
-#ifdef __cplusplus
-}
 #endif

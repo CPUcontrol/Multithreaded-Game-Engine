@@ -10,11 +10,11 @@
 #if APP_BACKEND == APP_ENUM_BACKEND_OPENGL
 
 #include "sdl/glyph_opengl.h"
-typedef struct Enj_Glyph_OpenGL Enj_Glyph;
+typedef Enj_Glyph_OpenGL Enj_Glyph;
 
 #else
 
 #include "sdl/glyph_sdl.h"
-typedef struct Enj_Glyph_SDL Enj_Glyph;
+typedef Enj_Glyph_SDL Enj_Glyph;
 
 #endif

@@ -4,9 +4,7 @@
 extern "C" {
 #endif
 
-typedef struct Enj_Renderer{
-    SDL_Renderer *sdlrend;
-} Enj_Renderer;
+typedef struct SDL_Renderer Enj_Renderer_SDL;
 
 #ifdef __cplusplus
 }

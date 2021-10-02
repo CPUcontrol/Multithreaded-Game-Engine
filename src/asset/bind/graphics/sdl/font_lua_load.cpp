@@ -557,6 +557,7 @@ int Enj_Lua_FontOnUnload(lua_State *L){
     lua_pushnil(L);
     while(lua_next(L, 3) != 0){
         lua_pushcfunction(L, Enj_Lua_TextureOnUnload);
+        lua_pushvalue(L, 5);
         luaasset *la_texture = (luaasset *)lua_touserdata(L, 5);
         la_texture->refcount = 0;
         lua_call(L, 1, 0);

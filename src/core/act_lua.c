@@ -431,7 +431,7 @@ void updateluaact(lua_State *L){
                 lua_resetthread(nL);
             case LUA_OK:
                 lua_pushcfunction(L, &wakewaiters);
-                lua_insert(L, 5);
+                lua_pushvalue(L, 4);
                 lua_call(L, 1, 0);
 
                 lua_pushvalue(L, 2);
@@ -449,7 +449,7 @@ void updateluaact(lua_State *L){
                     if(lua_compare(L, 4, 6, LUA_OPEQ)){
                         lua_resetthread(nL);
                         lua_pushcfunction(L, &wakewaiters);
-                        lua_insert(L, 6);
+                        lua_pushvalue(L, 4);
                         lua_call(L, 1, 0);
 
                         continue;
@@ -504,7 +504,7 @@ void updateluaact(lua_State *L){
                 lua_pushvalue(L, 4);
 
                 lua_pushcfunction(L, &wakewaiters);
-                lua_insert(L, 7);
+                lua_pushvalue(L, 4);
                 lua_call(L, 1, 0);
 
                 lua_pushvalue(L, 2);

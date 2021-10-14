@@ -196,14 +196,17 @@ void Enj_RenderList_OnRender(void *d, void *ctx, int xoffset, int yoffset){
     Enj_RenderList *rl = (Enj_RenderList *)d;
     Enj_RenderListSort(rl);
 
+    int xo = rl->xoffset + xoffset;
+    int yo = rl->yoffset + yoffset;
+
     Enj_RenderNode *it = rl->head;
     while(it){
         if (it->active)
             (*it->onrender)(
                 it->data,
                 it->ctx,
-                rl->xoffset + xoffset,
-                rl->yoffset + yoffset
+                xo,
+                yo
             );
         it = it->next;
     }

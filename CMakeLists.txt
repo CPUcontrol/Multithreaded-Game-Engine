@@ -59,7 +59,7 @@ set (CORE_SOURCE
     src/render/sdl/sprite_lua.c
     src/render/sdl/primrect.c
     src/render/sdl/primrect_lua.c
-    src/render/sdl/onrender_sdl.c
+    src/render/sdl/render_sdl.c
 
     )
 

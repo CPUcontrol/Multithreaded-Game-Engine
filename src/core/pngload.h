@@ -8,8 +8,8 @@ extern "C" {
 typedef struct Enj_Instream Enj_Instream;
 
 typedef struct Enj_PNGLoader{
-    unsigned int width;
-    unsigned int height;
+    unsigned long width;
+    unsigned long height;
     int bit_depth;
     int color_type;
 

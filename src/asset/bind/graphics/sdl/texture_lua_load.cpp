@@ -88,8 +88,8 @@ int Enj_Lua_TextureOnPreload(lua_State *L){
             }
 
             Enj_ReadPNG(&png, imgbuf, imgsz, 0);
-            unsigned int width = png.width;
-            unsigned int height = png.height;
+            unsigned short width = png.width;
+            unsigned short height = png.height;
             Enj_ClosePNG(&png);
             Enj_FreeInstream(&ifile);
 

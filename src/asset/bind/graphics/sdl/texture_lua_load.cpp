@@ -58,6 +58,19 @@ int Enj_Lua_TextureOnPreload(lua_State *L){
 
                 return;
             }
+            //Max dimension size is 2^16-1
+            if((png.width > (1<<16)-1) | (png.height > (1<<16)-1)){
+                Enj_ClosePNG(&png);
+                Enj_FreeInstream(&ifile);
+
+                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                ctx->dispatch.mq.q.push([la, e, ctx](){
+                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    Enj_Free(&ctx->alloc, e);
+                });
+
+                return;
+            }
 
             size_t imgsz = png.width*png.height*4;
             void *imgbuf = malloc(imgsz);

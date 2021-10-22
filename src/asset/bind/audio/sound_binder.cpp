@@ -10,10 +10,10 @@ sound_binder::sound_binder(
         lua_State *L
 ): dispatch(md), basepath(base), Lmain(L)
 {
-    buf = malloc(1<<12);
+    buf = malloc((1<<12)*sizeof(Enj_Sound));
     if(!buf) return;
 
-    Enj_InitPoolAllocator(&alloc, &dat, buf, 1<<12, sizeof(Enj_Sound));
+    Enj_InitPoolAllocator(&alloc, &dat, buf, (1<<12)*sizeof(Enj_Sound), sizeof(Enj_Sound));
 }
 
 sound_binder::~sound_binder(){

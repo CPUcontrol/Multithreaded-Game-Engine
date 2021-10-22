@@ -675,8 +675,10 @@ quit_app:
     md.cv.notify_one();
     worker.join();
 
-    for(Enj_RenderNode *it = mdata.renderlist->head; it; it = it->next){
-        (*it->onfreedata)(it->data, it->ctx, it->allocdata);
+    for(Enj_ListNode *it = mdata.renderlist->list.head; it; it = it->next){
+        Enj_RenderNode *node = (Enj_RenderNode *)
+            ((char *)it - offsetof(Enj_RenderNode, listnode));
+        (*node->onfreedata)(node->data, node->ctx, node->allocdata);
     }
     Enj_RenderListFree(mdata.renderlist);
 

@@ -72,139 +72,33 @@ void Enj_PrimRect_OnRender(void *d, void *ctx, int xoffset, int yoffset){
 }
 
 
-//RenderList
-static void mergesort_r(
-    Enj_RenderNode *beg, size_t sz,
-    Enj_RenderNode **nh, Enj_RenderNode **nt)
-{
-    if(sz == 1){
-        beg->prev = NULL;
-        beg->next = NULL;
+static int rendernodecmp(Enj_ListNode *a, Enj_ListNode *b){
+    Enj_RenderNode *nodea = (Enj_RenderNode *)
+            ((char *)a - offsetof(Enj_RenderNode, listnode));
 
-        *nh = beg;
-        *nt = beg;
-        return;
-    }
+    Enj_RenderNode *nodeb = (Enj_RenderNode *)
+            ((char *)b - offsetof(Enj_RenderNode, listnode));
 
-    Enj_RenderNode *mid = beg;
-    size_t sz1 = sz/2;
-    for(size_t i = 0; i < sz1; i++){
-        mid = mid->next;
-    }
-
-    Enj_RenderNode *h1;
-    Enj_RenderNode *t1;
-
-    Enj_RenderNode *h2;
-    Enj_RenderNode *t2;
-
-    mergesort_r(beg, sz1, &h1, &t1);
-    mergesort_r(mid, sz-sz1, &h2, &t2);
-
-    Enj_RenderNode *it;
-    if(h1->priority <= h2->priority){
-        *nh = h1;
-
-        it = h1;
-        h1 = h1->next;
-
-        if(h1 == NULL){
-            it->next = h2;
-            h2->prev = it;
-
-            *nt = t2;
-            return;
-        }
-    }
-    else{
-        *nh = h2;
-
-        it = h2;
-        h2 = h2->next;
-
-        if(h2 == NULL){
-            it->next = h1;
-            h1->prev = it;
-
-            *nt = t1;
-            return;
-        }
-    }
-
-    for(;;){
-        if(h1->priority <= h2->priority){
-            it->next = h1;
-            h1->prev = it;
-
-            it = h1;
-            h1 = h1->next;
-
-            if(h1 == NULL){
-                it->next = h2;
-                h2->prev = it;
-
-                *nt = t2;
-                return;
-            }
-        }
-        else{
-            it->next = h2;
-            h2->prev = it;
-
-            it = h2;
-            h2 = h2->next;
-
-            if(h2 == NULL){
-                it->next = h1;
-                h1->prev = it;
-
-                *nt = t1;
-                return;
-            }
-        }
-    }
-
-
-}
-
-static void Enj_RenderListSort(Enj_RenderList *rl){
-    //Empty list or single list already sorted
-    if(rl->size < 2) return;
-    //first check if sorted already
-    Enj_RenderNode *it = rl->head;
-    int prmin = it->priority;
-    while(it->next){
-        //If not sorted, start to sort
-        if(it->next->priority > prmin) {
-            Enj_RenderNode *nh;
-            Enj_RenderNode *nt;
-
-            mergesort_r(rl->head, rl->size, &nh, &nt);
-
-            rl->head = nh;
-            rl->tail = nt;
-
-            return;
-        }
-
-        prmin = it->next->priority;
-        it = it->next;
-    }
+    return   (nodea->priority > nodeb->priority)
+            -(nodea->priority < nodeb->priority);
 }
 
 void Enj_RenderList_OnRender(void *d, void *ctx, int xoffset, int yoffset){
     Enj_RenderList *rl = (Enj_RenderList *)d;
-    Enj_RenderListSort(rl);
+    Enj_ListSort(&rl->list, &rendernodecmp);
 
     int xo = rl->xoffset + xoffset;
     int yo = rl->yoffset + yoffset;
 
-    Enj_RenderNode *it = rl->head;
+    Enj_ListNode *it = rl->list.head;
     while(it){
-        if (it->active)
-            (*it->onrender)(
-                it->data,
-                it->ctx,
+        Enj_RenderNode *node = (Enj_RenderNode *)
+            ((char *)it - offsetof(Enj_RenderNode, listnode));
+
+        if (node->active)
+            (*node->onrender)(
+                node->data,
+                node->ctx,
                 xo,
                 yo
             );

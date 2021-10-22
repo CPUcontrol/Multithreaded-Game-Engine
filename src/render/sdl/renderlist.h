@@ -2,14 +2,17 @@
 
 #include <stddef.h>
 
+#include "../list.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct Enj_Allocator Enj_Allocator;
-typedef struct Enj_RenderNode Enj_RenderNode;
 
 typedef struct Enj_RenderNode{
+    Enj_ListNode listnode;
+
     void *data;
     void *ctx;
     //data, render ctx, x offset, y offset
@@ -18,17 +21,13 @@ typedef struct Enj_RenderNode{
     //data, render ctx, data allocator
     void (*onfreedata)(void *, void *, Enj_Allocator *a);
 
-    Enj_RenderNode *prev;
-    Enj_RenderNode *next;
     int priority;
     int active;
 } Enj_RenderNode;
 
 typedef struct Enj_RenderList{
+    Enj_List list;
     Enj_Allocator *allocnode;
-    Enj_RenderNode *head;
-    Enj_RenderNode *tail;
-    size_t size;
 
     int xoffset;
     int yoffset;

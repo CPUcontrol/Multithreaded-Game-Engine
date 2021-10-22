@@ -3,70 +3,40 @@
 #include "../../core/allocator.h"
 
 void Enj_RenderListInit(Enj_RenderList *rl, Enj_Allocator *an){
+    Enj_ListReset(&rl->list);
     rl->allocnode = an;
-    rl->head = NULL;
-    rl->tail = NULL;
-    rl->size = 0;
     rl->xoffset = 0;
     rl->yoffset = 0;
 }
 void Enj_RenderListFree(Enj_RenderList *rl){
-    Enj_RenderNode *it = rl->head;
+    Enj_ListNode *it = (Enj_ListNode *)rl->list.head;
     while(it){
-        Enj_RenderNode *itn = it->next;
+        Enj_ListNode *itn = it->next;
 
-        Enj_Free(rl->allocnode, it);
+        Enj_Free(
+            rl->allocnode,
+            (Enj_RenderNode *)
+                ((char *)it - offsetof(Enj_RenderNode, listnode))
+            );
 
         it = itn;
     }
-    rl->head = NULL;
-    rl->tail = NULL;
-    rl->size = 0;
+    Enj_ListReset(&rl->list);
 }
 Enj_RenderNode * Enj_RenderListAppend(Enj_RenderList *rl){
     Enj_RenderNode * res = (Enj_RenderNode *)
             Enj_Alloc(rl->allocnode, sizeof(Enj_RenderNode));
     if(!res) return NULL;
 
-    if(rl->size == 0){
-        rl->head = res;
+    Enj_ListAppend(&rl->list, &res->listnode);
 
-        res->prev = NULL;
-        res->next = NULL;
-        res->priority = 0;
-
-        rl->tail = res;
-    }
-    else{
-        res->prev = rl->tail;
-        res->next = NULL;
-        res->priority = 0;
-
-        rl->tail->next = res;
-
-        rl->tail = res;
-    }
-
-    ++rl->size;
+    res->priority = 0;
     return res;
 }
 void Enj_RenderListRemove(Enj_RenderList *rl, Enj_RenderNode *rn){
-    if(rn == rl->head){
-        rl->head = rn->next;
-    }
-    else{
-        rn->prev->next = rn->next;
-    }
-
-    if(rn == rl->tail){
-        rl->tail = rn->prev;
-    }
-    else{
-        rn->next->prev = rn->prev;
-    }
+    Enj_ListRemove(&rl->list, &rn->listnode);
 
     Enj_Free(rl->allocnode, rn);
-    --rl->size;
 }
 
 

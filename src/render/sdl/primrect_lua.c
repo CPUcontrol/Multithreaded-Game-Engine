@@ -508,7 +508,7 @@ static void bindprimrectline(
     lua_setfield(L, 3, "__newindex");
 
     //rest of the meta
-    lua_pushliteral(L, "primrectline");
+    lua_pushliteral(L, "rectline");
     lua_pushvalue(L, 4);
     lua_setfield(L, 3, "__metatable");
 
@@ -598,7 +598,7 @@ static void bindprimrectfill(
     lua_setfield(L, 3, "__newindex");
 
     //rest of the meta
-    lua_pushliteral(L, "primrectfill");
+    lua_pushliteral(L, "rectfill");
     lua_pushvalue(L, 4);
     lua_setfield(L, 3, "__metatable");
 

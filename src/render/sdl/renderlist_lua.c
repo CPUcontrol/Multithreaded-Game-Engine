@@ -136,7 +136,7 @@ static int luacreateprimrectline_fromrenderlist(lua_State *L){
     Enj_PrimRect *pr = (Enj_PrimRect *)
         Enj_Alloc(allocprimrect, sizeof(Enj_PrimRect));
     if(!pr) {
-        lua_pushliteral(L, "max primrects exceeded");
+        lua_pushliteral(L, "max rectangles exceeded");
         return Enj_Lua_Error(L);
     }
 
@@ -158,7 +158,7 @@ static int luacreateprimrectline_fromrenderlist(lua_State *L){
     lrn->rn = newrn;
 
 
-    lua_getfield(L, tmpidx+2, "primrectline");
+    lua_getfield(L, tmpidx+2, "rectline");
     lua_setmetatable(L, tmpidx+5);
 
     pr->r=255;
@@ -209,7 +209,7 @@ static int luacreateprimrectfill_fromrenderlist(lua_State *L){
     Enj_PrimRect *pr = (Enj_PrimRect *)
         Enj_Alloc(allocprimrect, sizeof(Enj_PrimRect));
     if(!pr) {
-        lua_pushliteral(L, "max primrects exceeded");
+        lua_pushliteral(L, "max rectangles exceeded");
         return Enj_Lua_Error(L);
     }
 
@@ -231,7 +231,7 @@ static int luacreateprimrectfill_fromrenderlist(lua_State *L){
     lrn->rn = newrn;
 
 
-    lua_getfield(L, tmpidx+2, "primrectfill");
+    lua_getfield(L, tmpidx+2, "rectfill");
     lua_setmetatable(L, tmpidx+5);
 
     pr->r=255;
@@ -545,11 +545,11 @@ void bindrenderlist(
     lua_pushlightuserdata(L, rend);
     lua_pushlightuserdata(L, allocprimrect);
     lua_pushcclosure(L, luacreateprimrectline_fromrenderlist, 2);
-    lua_setfield(L, 4, "create_primrectline");
+    lua_setfield(L, 4, "create_rectline");
     lua_pushlightuserdata(L, rend);
     lua_pushlightuserdata(L, allocprimrect);
     lua_pushcclosure(L, luacreateprimrectfill_fromrenderlist, 2);
-    lua_setfield(L, 4, "create_primrectfill");
+    lua_setfield(L, 4, "create_rectfill");
 
     //gets
     lua_createtable(L, 0, 4);

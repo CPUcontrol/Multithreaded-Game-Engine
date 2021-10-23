@@ -18,7 +18,7 @@
 #include "../../asset/graphics/glyph_lua.h"
 
 #include "luarendernode.h"
-#include "lua_extra_render.h"
+#include "../lua_extra_render.h"
 
 static int luacreatesprite_fromrenderlist(lua_State *L){
     int tmpidx = lua_gettop(L);

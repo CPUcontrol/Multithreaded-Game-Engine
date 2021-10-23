@@ -18,7 +18,7 @@
 #include "renderlist.h"
 
 #include "luarendernode.h"
-#include "lua_extra_render.h"
+#include "../lua_extra_render.h"
 
 static int luadestroysprite(lua_State *L){
     int tmpidx = lua_gettop(L);

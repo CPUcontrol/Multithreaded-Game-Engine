@@ -7,7 +7,7 @@
 #include "luarendernode.h"
 
 #include "../../core/lua_extra.h"
-#include "lua_extra_render.h"
+#include "../lua_extra_render.h"
 
 int Enj_Lua_GetRenderNodePriority(lua_State *L){
     luarendernode *lrn =

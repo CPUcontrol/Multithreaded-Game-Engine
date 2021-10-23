@@ -52,8 +52,8 @@ set (CORE_SOURCE
     src/asset/bind/misc/data_lua_load.cpp
 
     src/render/list.c
+    src/render/render_lua.c
     src/render/sdl/lua_extra_render.c
-    src/render/sdl/render_lua.c
     src/render/sdl/renderlist.c
     src/render/sdl/renderlist_lua.c
     src/render/sdl/sprite.c

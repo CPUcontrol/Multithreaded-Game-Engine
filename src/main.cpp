@@ -53,8 +53,8 @@
 
 #include "asset/util/multi_dispatch.hpp"
 
+#include "render/render_lua.h"
 #include "render/sdl/luarendernode.h"
-#include "render/sdl/render_lua.h"
 #include "render/sdl/renderlist.h"
 #include "render/sdl/renderlist_lua.h"
 #include "render/sdl/sprite.h"

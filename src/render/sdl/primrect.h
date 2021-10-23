@@ -15,12 +15,15 @@ typedef struct Enj_PrimRect{
     int xcen;
     int ycen;
 
-    unsigned char fill[4];
-    unsigned char stroke[4];
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+    unsigned char a;
 } Enj_PrimRect;
 
 void Enj_PrimRect_OnFree(void *d, void *ctx, Enj_Allocator *a);
-void Enj_PrimRect_OnRender(void *d, void *ctx, int xoffset, int yoffset);
+void Enj_PrimRectLine_OnRender(void *d, void *ctx, int xoffset, int yoffset);
+void Enj_PrimRectFill_OnRender(void *d, void *ctx, int xoffset, int yoffset);
 #ifdef __cplusplus
 }
 #endif

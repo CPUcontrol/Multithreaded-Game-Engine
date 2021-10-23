@@ -111,7 +111,7 @@ static int luacreatesprite_fromrenderlist(lua_State *L){
     return 1;
 }
 
-static int luacreateprimrect_fromrenderlist(lua_State *L){
+static int luacreateprimrectline_fromrenderlist(lua_State *L){
     int tmpidx = lua_gettop(L);
 
     lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
@@ -150,7 +150,7 @@ static int luacreateprimrect_fromrenderlist(lua_State *L){
     newrn->ctx = lua_touserdata(L, lua_upvalueindex(1));
     newrn->allocdata = allocprimrect;
     newrn->onfreedata = Enj_PrimRect_OnFree;
-    newrn->onrender = Enj_PrimRect_OnRender;
+    newrn->onrender = Enj_PrimRectLine_OnRender;
     newrn->priority = 0;
     newrn->active = 1;
 
@@ -158,17 +158,13 @@ static int luacreateprimrect_fromrenderlist(lua_State *L){
     lrn->rn = newrn;
 
 
-    lua_getfield(L, tmpidx+2, "primrect");
+    lua_getfield(L, tmpidx+2, "primrectline");
     lua_setmetatable(L, tmpidx+5);
 
-    pr->fill[0]=0;
-    pr->fill[1]=0;
-    pr->fill[2]=0;
-    pr->fill[3]=0;
-    pr->stroke[0]=255;
-    pr->stroke[1]=255;
-    pr->stroke[2]=255;
-    pr->stroke[3]=255;
+    pr->r=255;
+    pr->g=255;
+    pr->b=255;
+    pr->a=255;
 
     pr->x = 0;
     pr->y = 0;
@@ -188,7 +184,78 @@ static int luacreateprimrect_fromrenderlist(lua_State *L){
     return 1;
 }
 
+static int luacreateprimrectfill_fromrenderlist(lua_State *L){
+    int tmpidx = lua_gettop(L);
 
+    lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
+    lua_getfield(L, tmpidx+1, "render");
+
+    lua_getmetatable(L, 1);
+    lua_getfield(L, tmpidx+2, "renderlist");
+    if(!lua_compare(L, tmpidx+3, tmpidx+4, LUA_OPEQ)){
+        lua_pushliteral(L, "bad arguments");
+        return Enj_Lua_Error(L);
+    }
+
+    luarendernode *lrn_parent = (luarendernode *)lua_touserdata(L, 1);
+
+    Enj_RenderList *parent =
+        (Enj_RenderList *)lrn_parent->rn->data;
+    Enj_Allocator *allocprimrect =
+        (Enj_Allocator *)lua_touserdata(L, lua_upvalueindex(2));
+    luarendernode *lrn = (luarendernode *)
+        lua_newuserdatauv(L, sizeof(luarendernode), 2);
+
+    Enj_PrimRect *pr = (Enj_PrimRect *)
+        Enj_Alloc(allocprimrect, sizeof(Enj_PrimRect));
+    if(!pr) {
+        lua_pushliteral(L, "max primrects exceeded");
+        return Enj_Lua_Error(L);
+    }
+
+    Enj_RenderNode *newrn = Enj_RenderListAppend(parent);
+    if(!newrn) {
+        Enj_Free(allocprimrect, pr);
+        lua_pushliteral(L, "max render nodes exceeded");
+        return Enj_Lua_Error(L);
+    }
+    newrn->data = pr;
+    newrn->ctx = lua_touserdata(L, lua_upvalueindex(1));
+    newrn->allocdata = allocprimrect;
+    newrn->onfreedata = Enj_PrimRect_OnFree;
+    newrn->onrender = Enj_PrimRectFill_OnRender;
+    newrn->priority = 0;
+    newrn->active = 1;
+
+    lrn->parent = parent;
+    lrn->rn = newrn;
+
+
+    lua_getfield(L, tmpidx+2, "primrectfill");
+    lua_setmetatable(L, tmpidx+5);
+
+    pr->r=255;
+    pr->g=255;
+    pr->b=255;
+    pr->a=255;
+
+    pr->x = 0;
+    pr->y = 0;
+    pr->w = 0;
+    pr->h = 0;
+    pr->xcen = 0;
+    pr->ycen = 0;
+
+    //Update parent lua renderlist's table of children
+    lua_getiuservalue(L, 1, 2);
+    lua_pushvalue(L, tmpidx+5);
+    lua_getmetatable(L, tmpidx+5);
+    lua_settable(L, tmpidx+6);
+    //Put parent table of children into new render node
+    lua_setiuservalue(L, tmpidx+5, 1);
+
+    return 1;
+}
 
 static int luacreaterenderlist_fromrenderlist(lua_State *L){
     int tmpidx = lua_gettop(L);
@@ -477,8 +544,12 @@ void bindrenderlist(
     lua_setfield(L, 4, "create_sprite");
     lua_pushlightuserdata(L, rend);
     lua_pushlightuserdata(L, allocprimrect);
-    lua_pushcclosure(L, luacreateprimrect_fromrenderlist, 2);
-    lua_setfield(L, 4, "create_primrect");
+    lua_pushcclosure(L, luacreateprimrectline_fromrenderlist, 2);
+    lua_setfield(L, 4, "create_primrectline");
+    lua_pushlightuserdata(L, rend);
+    lua_pushlightuserdata(L, allocprimrect);
+    lua_pushcclosure(L, luacreateprimrectfill_fromrenderlist, 2);
+    lua_setfield(L, 4, "create_primrectfill");
 
     //gets
     lua_createtable(L, 0, 4);

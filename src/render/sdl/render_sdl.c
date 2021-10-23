@@ -40,7 +40,7 @@ void Enj_Sprite_OnRender(void *d, void *ctx, int xoffset, int yoffset){
 
 }
 
-void Enj_PrimRect_OnRender(void *d, void *ctx, int xoffset, int yoffset){
+void Enj_PrimRectLine_OnRender(void *d, void *ctx, int xoffset, int yoffset){
     Enj_PrimRect *pr = (Enj_PrimRect *)d;
     SDL_Renderer *rend = (SDL_Renderer *)ctx;
 
@@ -57,20 +57,36 @@ void Enj_PrimRect_OnRender(void *d, void *ctx, int xoffset, int yoffset){
 
     SDL_SetRenderDrawBlendMode(rend, SDL_BLENDMODE_BLEND);
     SDL_SetRenderDrawColor(rend,
-        pr->fill[0],
-        pr->fill[1],
-        pr->fill[2],
-        pr->fill[3]);
-    SDL_RenderFillRect(rend, &drawrect);
-    SDL_SetRenderDrawColor(rend,
-        pr->stroke[0],
-        pr->stroke[1],
-        pr->stroke[2],
-        pr->stroke[3]);
+        pr->r,
+        pr->g,
+        pr->b,
+        pr->a);
     SDL_RenderDrawRect(rend, &drawrect);
-
 }
 
+void Enj_PrimRectFill_OnRender(void *d, void *ctx, int xoffset, int yoffset){
+    Enj_PrimRect *pr = (Enj_PrimRect *)d;
+    SDL_Renderer *rend = (SDL_Renderer *)ctx;
+
+    SDL_Rect drawrect;
+    SDL_Point drawcenter;
+
+    drawrect.x = xoffset + pr->x - pr->xcen;
+    drawrect.y = yoffset + pr->y - pr->ycen;
+    drawrect.w = pr->w;
+    drawrect.h = pr->h;
+
+    drawcenter.x = pr->xcen;
+    drawcenter.y = pr->ycen;
+
+    SDL_SetRenderDrawBlendMode(rend, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(rend,
+        pr->r,
+        pr->g,
+        pr->b,
+        pr->a);
+    SDL_RenderFillRect(rend, &drawrect);
+}
 
 static int rendernodecmp(Enj_ListNode *a, Enj_ListNode *b){
     Enj_RenderNode *nodea = (Enj_RenderNode *)

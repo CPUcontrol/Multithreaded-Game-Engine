@@ -4,24 +4,24 @@
 
 #include <stdlib.h>
 
-#include <SDL_render.h>
+#include <GL/gl3w.h>
 #include <lua.hpp>
 
 #include "../../../../core/allocator.h"
 #include "../../../../core/act_lua.h"
-#include "../../../../core/graphics/sdl/texture_sdl.h"
-#include "../../../../core/graphics/sdl/glyph_sdl.h"
+#include "../../../../core/graphics/opengl/texture_opengl.h"
+#include "../../../../core/graphics/opengl/glyph_opengl.h"
 
 #include "../../../util/multi_dispatch.hpp"
 
 #include "../../../luaasset.h"
 #include "../../../graphics/luafont.h"
-#include "font_binder.hpp"
+#include "font_binder_opengl.hpp"
 #include "../../font_lua_load.h"
 
-#include "texture_binder.hpp"
+#include "texture_binder_opengl.hpp"
 #include "../../texture_lua_load.h"
-#include "glyph_binder.hpp"
+#include "glyph_binder_opengl.hpp"
 #include "../../glyph_lua_load.h"
 
 #include <ft2build.h>
@@ -40,7 +40,7 @@ typedef struct glyphpair{
     int advance;
 
     size_t texture_id;
-    Enj_Glyph_SDL *glyph;
+    Enj_Glyph_OpenGL *glyph;
 }glyphpair;
 
 static int luagetnullchar(lua_State *L){
@@ -58,7 +58,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
 
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
-    font_binder *ctx = (font_binder *)la->ctx;
+    font_binder_OpenGL *ctx = (font_binder_OpenGL *)la->ctx;
     luafont *lf = (luafont *)lua_newuserdatauv(L, sizeof(luafont), 0);
     lua_setiuservalue(L, 1, 1);
 
@@ -256,7 +256,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
             }
 
             for(size_t i = 0; i < extrabuffers; i++){
-                atlasarray[i] = (unsigned char *)calloc(4 * (1<<11) * (1<<11), 1);
+                atlasarray[i] = (unsigned char *)calloc((1<<11) * (1<<11), 1);
                 if(!atlasarray[i]){
                     for(size_t k = 0; k < i; k++){
                         free(atlasarray[k]);
@@ -279,7 +279,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                 }
             }
 
-            size_t atlassize = 4 * ((size_t)1<<dimpow) * ((size_t)1<<dimpow);
+            size_t atlassize = ((size_t)1<<dimpow) * ((size_t)1<<dimpow);
             atlasarray[extrabuffers] =
                 (unsigned char *)calloc(atlassize, 1);
             if(!atlasarray[extrabuffers]){
@@ -317,17 +317,14 @@ int Enj_Lua_FontOnPreload(lua_State *L){
 
                 for(int r = 0; r < gh; r++){
                     for(int c = 0; c < gw; c++){
-                        unsigned char *rgba =
+                        unsigned char *pixel =
                             atlasarray[glyphpairs[i].texture_id]
-                                + (4*( ((gy + r)<<dim) + (gx + c)));
+                                + (((gy + r)<<dim) + (gx + c));
 
                         FT_BitmapGlyph bmg = (FT_BitmapGlyph)ftglyphs[i];
 
                         int pitch = bmg->bitmap.pitch;
-                        rgba[0] = 255;
-                        rgba[1] = 255;
-                        rgba[2] = 255;
-                        rgba[3] = bmg->bitmap.buffer[r*pitch + c];
+                        *pixel = bmg->bitmap.buffer[r*pitch + c];
                     }
                 }
             }
@@ -345,8 +342,8 @@ int Enj_Lua_FontOnPreload(lua_State *L){
 
 
                 for(size_t i = 0; i < numchars+1; i++){
-                    glyphpairs[i].glyph = (Enj_Glyph_SDL *)
-                        Enj_Alloc(&ctx->glyphbinder.alloc, sizeof(Enj_Glyph_SDL));
+                    glyphpairs[i].glyph = (Enj_Glyph_OpenGL *)
+                        Enj_Alloc(&ctx->glyphbinder.alloc, sizeof(Enj_Glyph_OpenGL));
 
                     if(!glyphpairs[i].glyph){
                         for(size_t k = 0; k < i; k++){
@@ -361,18 +358,32 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                         return;
                     }
 
-                    glyphpairs[i].glyph->rect.x = glyphpairs[i].x;
-                    glyphpairs[i].glyph->rect.y = glyphpairs[i].y;
-                    glyphpairs[i].glyph->rect.w = glyphpairs[i].w;
-                    glyphpairs[i].glyph->rect.h = glyphpairs[i].h;
+                    unsigned char dim =
+                        (glyphpairs[i].texture_id != extrabuffers) ?
+                            11 : dimpow;
+
+                    glyphpairs[i].glyph->width = glyphpairs[i].w;
+                    glyphpairs[i].glyph->height = glyphpairs[i].h;
+
+                    glyphpairs[i].glyph->fliprotate =
+                        0<<0 | 1<<2 | 2<<4 | 3<<6;
+
+                    glyphpairs[i].glyph->u_ul = (GLfloat)
+                        glyphpairs[i].x / (1<<dim);
+                    glyphpairs[i].glyph->v_ul = (GLfloat)
+                        glyphpairs[i].y / (1<<dim);
+                    glyphpairs[i].glyph->u_dr = (GLfloat)
+                        (glyphpairs[i].x+glyphpairs[i].w) / (1<<dim);
+                    glyphpairs[i].glyph->v_dr = (GLfloat)
+                        (glyphpairs[i].y+glyphpairs[i].h) / (1<<dim);
                 }
 
-                Enj_Texture_SDL **texarray = (Enj_Texture_SDL **)
-                    malloc((extrabuffers+1)*sizeof(Enj_Texture_SDL *));
+                Enj_Texture_OpenGL **texarray = (Enj_Texture_OpenGL **)
+                    malloc((extrabuffers+1)*sizeof(Enj_Texture_OpenGL *));
 
                 for(size_t i = 0; i < extrabuffers+1; i++){
-                    texarray[i] = (Enj_Texture_SDL *)
-                        Enj_Alloc(&ctx->texturebinder.alloc, sizeof(Enj_Texture_SDL));
+                    texarray[i] = (Enj_Texture_OpenGL *)
+                        Enj_Alloc(&ctx->texturebinder.alloc, sizeof(Enj_Texture_OpenGL));
                     if(!texarray[i]){
                         for(size_t k = 0; k < i; k++){
                             Enj_Free(&ctx->texturebinder.alloc, texarray[k]);
@@ -395,13 +406,21 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                                             11 : dimpow;
                     texarray[i]->width = 1<<dim;
                     texarray[i]->height = 1<<dim;
-                    texarray[i]->tx = SDL_CreateTexture(ctx->rend,
-                        SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC,
-                        1<<dim, 1<<dim);
-                    SDL_UpdateTexture(texarray[i]->tx, NULL, atlasarray[i],
-                        (1<<dim) * 4);
-                    SDL_SetTextureBlendMode(texarray[i]->tx, SDL_BLENDMODE_BLEND);
-
+                    glGenTextures(1, &texarray[i]->id);
+                    glBindTexture(GL_TEXTURE_2D, texarray[i]->id);
+                    //Power of 2 texture at least 2^8 by 2^8
+                    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+                    glTexImage2D(
+                        GL_TEXTURE_2D, 0, GL_R8, 1<<dim, 1<<dim,
+                        0, GL_RED, GL_UNSIGNED_BYTE, atlasarray[i]
+                    );
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                    //Set swizzle to make the single channel the alpha
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_ONE);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_ONE);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_ONE);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_RED);
 
                 }
                 for(size_t i = 0; i < extrabuffers+1; i++){

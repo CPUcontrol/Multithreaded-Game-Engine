@@ -9,7 +9,7 @@
 
 #if APP_BACKEND == APP_ENUM_BACKEND_OPENGL
 
-#include "sdl/glyph_opengl.h"
+#include "opengl/glyph_opengl.h"
 typedef Enj_Glyph_OpenGL Enj_Glyph;
 
 #else

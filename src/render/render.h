@@ -9,7 +9,7 @@
 
 #if APP_BACKEND == APP_ENUM_BACKEND_OPENGL
 
-#include "sdl/render_opengl.h"
+#include "opengl/render_opengl.h"
 typedef Enj_Renderer_OpenGL Enj_Renderer;
 
 #else

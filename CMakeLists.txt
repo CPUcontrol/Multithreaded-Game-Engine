@@ -5,7 +5,8 @@ set (APP_NAME "Untitled" CACHE PATH "Name of app")
 set (APP_COMPANY "Cycloid" CACHE PATH "Name of app company")
 
 set (DATA_DIRECTORY "" CACHE PATH "Path to directory containing data for the app")
-
+set (APP_RENDER_BACKEND "sdl" CACHE STRING "Backend for the app")
+set_property(CACHE APP_RENDER_BACKEND PROPERTY STRINGS "sdl;opengl")
 add_compile_definitions(
     "APP_NAME=\"${APP_NAME}\""
     "APP_COMPANY=\"${APP_COMPANY}\""
@@ -31,15 +32,6 @@ set (CORE_SOURCE
     src/asset/lua_extra_asset.c
 
     src/asset/graphics/font_lua.c
-    src/asset/graphics/sdl/texture_lua.c
-    src/asset/graphics/sdl/glyph_lua.c
-
-    src/asset/bind/graphics/sdl/texture_binder.cpp
-    src/asset/bind/graphics/sdl/texture_lua_load.cpp
-    src/asset/bind/graphics/sdl/glyph_binder.cpp
-    src/asset/bind/graphics/sdl/glyph_lua_load.cpp
-    src/asset/bind/graphics/sdl/font_binder.cpp
-    src/asset/bind/graphics/sdl/font_lua_load.cpp
 
     src/asset/audio/sound_lua.c
 
@@ -53,26 +45,65 @@ set (CORE_SOURCE
 
     src/render/list.c
     src/render/render_lua.c
-    src/render/sdl/lua_extra_render.c
-    src/render/sdl/renderlist.c
-    src/render/sdl/renderlist_lua.c
-    src/render/sdl/sprite.c
-    src/render/sdl/sprite_lua.c
-    src/render/sdl/primrect.c
-    src/render/sdl/primrect_lua.c
-    src/render/sdl/render_sdl.c
-
     )
 
-if (APP_RENDER_BACKEND EQUAL "opengl")
+if (APP_RENDER_BACKEND STREQUAL "opengl")
     add_subdirectory(gl3w EXCLUDE_FROM_ALL)
+    set (CORE_SOURCE_RENDER
+        src/asset/graphics/opengl/texture_lua_opengl.c
+        src/asset/graphics/opengl/glyph_lua_opengl.c
+
+        src/asset/bind/graphics/opengl/texture_binder_opengl.cpp
+        src/asset/bind/graphics/opengl/texture_lua_load_opengl.cpp
+        src/asset/bind/graphics/opengl/glyph_binder_opengl.cpp
+        src/asset/bind/graphics/opengl/glyph_lua_load_opengl.cpp
+        src/asset/bind/graphics/opengl/font_binder_opengl.cpp
+        src/asset/bind/graphics/opengl/font_lua_load_opengl.cpp
+
+        src/render/opengl/lua_extra_render_opengl.c
+        src/render/opengl/renderlist_opengl.c
+        src/render/opengl/renderlist_lua_opengl.c
+        src/render/opengl/sprite_opengl.c
+        src/render/opengl/sprite_lua_opengl.c
+        src/render/opengl/primrect_opengl.c
+        src/render/opengl/primrect_lua_opengl.c
+        src/render/opengl/render_opengl.c
+    )
+else()
+    set (CORE_SOURCE_RENDER
+        src/asset/graphics/sdl/texture_lua.c
+        src/asset/graphics/sdl/glyph_lua.c
+
+        src/asset/bind/graphics/sdl/texture_binder.cpp
+        src/asset/bind/graphics/sdl/texture_lua_load.cpp
+        src/asset/bind/graphics/sdl/glyph_binder.cpp
+        src/asset/bind/graphics/sdl/glyph_lua_load.cpp
+        src/asset/bind/graphics/sdl/font_binder.cpp
+        src/asset/bind/graphics/sdl/font_lua_load.cpp
+
+        src/render/sdl/lua_extra_render.c
+        src/render/sdl/renderlist.c
+        src/render/sdl/renderlist_lua.c
+        src/render/sdl/sprite.c
+        src/render/sdl/sprite_lua.c
+        src/render/sdl/primrect.c
+        src/render/sdl/primrect_lua.c
+        src/render/sdl/render_sdl.c
+    )
 endif ()
 
 if (MSVC)
-    add_library(core ${CORE_SOURCE})
+    add_library(core ${CORE_SOURCE} ${CORE_SOURCE_RENDER})
     add_executable (main
         src/main.cpp
         )
+
+    if (APP_RENDER_BACKEND STREQUAL "opengl")
+        target_compile_definitions(main PRIVATE APP_BACKEND=1)
+        target_include_directories(core PRIVATE "${CMAKE_SOURCE_DIR}/gl3w/include")
+        target_include_directories(main PRIVATE "${CMAKE_SOURCE_DIR}/gl3w/include")
+        set (RENDER_LIBS gl3w OpenGL32.lib)
+    endif ()
 
     set_target_properties(main PROPERTIES VS_DPI_AWARE "PerMonitor")
 
@@ -192,7 +223,7 @@ elseif (APPLE)
         file (GLOB RESOURCE_FILES CONFIGURE_DEPENDS "${DATA_DIRECTORY}/*")
     endif ()
 
-    add_library(core ${CORE_SOURCE})
+    add_library(core ${CORE_SOURCE} ${CORE_SOURCE_RENDER})
     add_executable (main MACOSX_BUNDLE
         src/main.cpp
         ${RESOURCE_FILES}
@@ -260,7 +291,9 @@ target_link_libraries (main PUBLIC core
     ${LUA_LIB}
     ${ZLIB_LIB}
     ${PNG_LIB}
-    ${FT_LIB})
+    ${FT_LIB}
+
+    ${RENDER_LIBS})
 
 
 

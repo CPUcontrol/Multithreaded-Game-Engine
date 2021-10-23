@@ -9,7 +9,7 @@
 
 #if APP_BACKEND == APP_ENUM_BACKEND_OPENGL
 
-#include "sdl/texture_opengl.h"
+#include "opengl/texture_opengl.h"
 typedef Enj_Texture_OpenGL Enj_Texture;
 
 #else

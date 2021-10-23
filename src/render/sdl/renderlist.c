@@ -5,8 +5,6 @@
 void Enj_RenderListInit(Enj_RenderList *rl, Enj_Allocator *an){
     Enj_ListReset(&rl->list);
     rl->allocnode = an;
-    rl->xoffset = 0;
-    rl->yoffset = 0;
 }
 void Enj_RenderListFree(Enj_RenderList *rl){
     Enj_ListNode *it = (Enj_ListNode *)rl->list.head;

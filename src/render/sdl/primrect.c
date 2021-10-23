@@ -1,5 +1,3 @@
-#include <SDL_render.h>
-
 #include "primrect.h"
 #include "../../core/allocator.h"
 

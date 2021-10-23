@@ -13,7 +13,6 @@
 #include "../../core/graphics/sdl/glyph_sdl.h"
 
 #include "../../asset/luaasset.h"
-#include "../../asset/graphics/glyph_lua.h"
 
 #include "renderlist.h"
 

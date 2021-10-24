@@ -370,9 +370,9 @@ static int luasetrenderlistscalex(lua_State *L){
 
     Enj_RenderList_OpenGL *rl = (Enj_RenderList_OpenGL *)rn->data;
 
-    int isint;
-    lua_Integer v = lua_tointegerx(L, 2, &isint);
-    if(!isint){
+    int isnum;
+    lua_Number v = lua_tonumberx(L, 2, &isnum);
+    if(!isnum){
         lua_pushliteral(L, "assigned incompatible type");
         return Enj_Lua_Error(L);
     }
@@ -408,9 +408,9 @@ static int luasetrenderlistscaley(lua_State *L){
 
     Enj_RenderList_OpenGL *rl = (Enj_RenderList_OpenGL *)rn->data;
 
-    int isint;
-    lua_Integer v = lua_tointegerx(L, 2, &isint);
-    if(!isint){
+    int isnum;
+    lua_Number v = lua_tonumberx(L, 2, &isnum);
+    if(!isnum){
         lua_pushliteral(L, "assigned incompatible type");
         return Enj_Lua_Error(L);
     }
@@ -446,9 +446,9 @@ static int luasetrenderlisttranslatex(lua_State *L){
 
     Enj_RenderList_OpenGL *rl = (Enj_RenderList_OpenGL *)rn->data;
 
-    int isint;
-    lua_Integer v = lua_tointegerx(L, 2, &isint);
-    if(!isint){
+    int isnum;
+    lua_Number v = lua_tonumberx(L, 2, &isnum);
+    if(!isnum){
         lua_pushliteral(L, "assigned incompatible type");
         return Enj_Lua_Error(L);
     }
@@ -484,9 +484,9 @@ static int luasetrenderlistangle(lua_State *L){
 
     Enj_RenderList_OpenGL *rl = (Enj_RenderList_OpenGL *)rn->data;
 
-    int isint;
-    lua_Integer v = lua_tointegerx(L, 2, &isint);
-    if(!isint){
+    int isnum;
+    lua_Number v = lua_tonumberx(L, 2, &isnum);
+    if(!isnum){
         lua_pushliteral(L, "assigned incompatible type");
         return Enj_Lua_Error(L);
     }
@@ -522,9 +522,9 @@ static int luasetrenderlisttranslatey(lua_State *L){
 
     Enj_RenderList_OpenGL *rl = (Enj_RenderList_OpenGL *)rn->data;
 
-    int isint;
-    lua_Integer v = lua_tointegerx(L, 2, &isint);
-    if(!isint){
+    int isnum;
+    lua_Number v = lua_tonumberx(L, 2, &isnum);
+    if(!isnum){
         lua_pushliteral(L, "assigned incompatible type");
         return Enj_Lua_Error(L);
     }

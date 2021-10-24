@@ -510,7 +510,7 @@ static int luagetspriteangle(lua_State *L){
 
     Enj_Sprite_OpenGL *sp = (Enj_Sprite_OpenGL *)rn->data;
 
-    lua_pushnumber(L, 3.1415926535898 / 32768. * (double)sp->angle);
+    lua_pushnumber(L, sp->angle);
     return 1;
 }
 static int luasetspriteangle(lua_State *L){
@@ -532,17 +532,7 @@ static int luasetspriteangle(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    //Round to nearest int in [0, 65536)
-    double res = 32768. / 3.1415926535898 * v;
-    res = floor(res + 0.5);
-    res = fmod(res, 65536.);
-    //Convert to integral type - now in interval (-65536, 65536)
-    long resround = (long)res;
-    //Add 65536 if res less than zero
-    resround += resround < 0 ? 65536 : 0;
-
-
-    sp->angle = (unsigned short)resround;
+    sp->angle = (float)v;
     return 0;
 }
 

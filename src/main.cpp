@@ -291,6 +291,9 @@ int main(int argc, char **argv){
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     mdata.rend = Enj_InitRenderer_OpenGL();
 
+    glClear(GL_COLOR_BUFFER_BIT);
+    SDL_GL_SwapWindow(mdata.wind);
+
     Mix_Init(0);
     //44100 Hz, default format, stereo, 2048 chunk size
     Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);

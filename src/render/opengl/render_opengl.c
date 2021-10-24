@@ -519,8 +519,8 @@ void Enj_Sprite_OnRender_OpenGL(
     idata[5] = rend->idxsprite + i4;
 
 
-    (struct vertexsprite *) rend->mapvbo += 4;
-    (GLuint *)              rend->mapibo += 6;
+    rend->mapvbo = (struct vertexsprite *) rend->mapvbo + 4;
+    rend->mapibo = (GLuint *)              rend->mapibo + 6;
     ++rend->batchsize;
     rend->idxsprite += 4;
 }
@@ -609,8 +609,8 @@ void Enj_PrimRectFill_OnRender_OpenGL(
     idata[5] = rend->idxcolor + 3;
 
 
-    (struct vertexcolor *)  rend->mapvbo += 4;
-    (GLuint *)              rend->mapibo += 6;
+    rend->mapvbo = (struct vertexcolor *)  rend->mapvbo + 4;
+    rend->mapibo = (GLuint *)              rend->mapibo + 6;
     ++rend->batchsize;
     rend->idxcolor += 4;
 }
@@ -700,8 +700,8 @@ void Enj_PrimRectLine_OnRender_OpenGL(
     idata[7] = rend->idxcolor + 0;
 
 
-    (struct vertexcolor *)  rend->mapvbo += 4;
-    (GLuint *)              rend->mapibo += 8;
+    rend->mapvbo = (struct vertexcolor *)  rend->mapvbo + 4;
+    rend->mapibo = (GLuint *)              rend->mapibo + 8;
     ++rend->batchsize;
     rend->idxcolor += 4;
 }

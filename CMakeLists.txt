@@ -229,6 +229,13 @@ elseif (APPLE)
         ${RESOURCE_FILES}
         )
 
+    if (APP_RENDER_BACKEND STREQUAL "opengl")
+        target_compile_definitions(main PRIVATE APP_BACKEND=1)
+        target_include_directories(core PRIVATE "${CMAKE_SOURCE_DIR}/gl3w/include")
+        target_include_directories(main PRIVATE "${CMAKE_SOURCE_DIR}/gl3w/include")
+        set (RENDER_LIBS gl3w "-framework OpenGL")
+    endif ()
+
     install (TARGETS main BUNDLE DESTINATION .)
 
 

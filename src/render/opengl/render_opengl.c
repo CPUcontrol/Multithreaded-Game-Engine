@@ -269,14 +269,14 @@ void Enj_RendererFlush_OpenGL(Enj_Renderer_OpenGL *rend){
 static void flushrenderersprite(Enj_Renderer_OpenGL *rend){
     glFlushMappedBufferRange(
         GL_ARRAY_BUFFER,
-        rend->vbo_sprite_offset,
+        0,
         rend->batchsize * 4 * sizeof(struct vertexsprite)
     );
     GLboolean success_vbo = glUnmapBuffer(GL_ARRAY_BUFFER);
 
     glFlushMappedBufferRange(
         GL_ELEMENT_ARRAY_BUFFER,
-        rend->ibo_sprite_offset,
+        0,
         rend->batchsize * 6 * sizeof(GLuint)
     );
     GLboolean success_ibo = glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
@@ -299,14 +299,14 @@ static void flushrenderersprite(Enj_Renderer_OpenGL *rend){
 static void flushrendererrectfill(Enj_Renderer_OpenGL *rend){
     glFlushMappedBufferRange(
         GL_ARRAY_BUFFER,
-        rend->vbo_color_offset,
+        0,
         rend->batchsize * 4 * sizeof(struct vertexcolor)
     );
     GLboolean success_vbo = glUnmapBuffer(GL_ARRAY_BUFFER);
 
     glFlushMappedBufferRange(
         GL_ELEMENT_ARRAY_BUFFER,
-        rend->ibo_color_offset,
+        0,
         rend->batchsize * 6 * sizeof(GLuint)
     );
     GLboolean success_ibo = glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
@@ -329,14 +329,14 @@ static void flushrendererrectfill(Enj_Renderer_OpenGL *rend){
 static void flushrendererrectline(Enj_Renderer_OpenGL *rend){
     glFlushMappedBufferRange(
         GL_ARRAY_BUFFER,
-        rend->vbo_color_offset,
+        0,
         rend->batchsize * 4 * sizeof(struct vertexcolor)
     );
     GLboolean success_vbo = glUnmapBuffer(GL_ARRAY_BUFFER);
 
     glFlushMappedBufferRange(
         GL_ELEMENT_ARRAY_BUFFER,
-        rend->ibo_color_offset,
+        0,
         rend->batchsize * 8 * sizeof(GLuint)
     );
     GLboolean success_ibo = glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);

@@ -5,7 +5,7 @@ set (APP_NAME "Untitled" CACHE PATH "Name of app")
 set (APP_COMPANY "Cycloid" CACHE PATH "Name of app company")
 
 set (DATA_DIRECTORY "" CACHE PATH "Path to directory containing data for the app")
-set (APP_RENDER_BACKEND "sdl" CACHE STRING "Backend for the app")
+set (APP_RENDER_BACKEND "opengl" CACHE STRING "Backend for the app")
 set_property(CACHE APP_RENDER_BACKEND PROPERTY STRINGS "sdl;opengl")
 add_compile_definitions(
     "APP_NAME=\"${APP_NAME}\""

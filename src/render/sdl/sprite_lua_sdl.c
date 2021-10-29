@@ -4,8 +4,8 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-#include "sprite.h"
-#include "sprite_lua.h"
+#include "sprite_sdl.h"
+#include "sprite_lua_sdl.h"
 
 #include "../../core/allocator.h"
 #include "../../core/lua_extra.h"
@@ -14,9 +14,9 @@
 
 #include "../../asset/luaasset.h"
 
-#include "renderlist.h"
+#include "renderlist_sdl.h"
 
-#include "luarendernode.h"
+#include "luarendernode_sdl.h"
 #include "../lua_extra_render.h"
 
 static int luadestroysprite(lua_State *L){
@@ -30,10 +30,10 @@ static int luadestroysprite(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
 
-    Enj_RenderNode *rn = lrn->rn;
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
@@ -46,14 +46,14 @@ static int luadestroysprite(lua_State *L){
     lua_pushnil(L);
     lua_setiuservalue(L, 1, 2);
 
-    Enj_RenderList *parent = lrn->parent;
+    Enj_RenderList_SDL *parent = lrn->parent;
 
     (*rn->onfreedata)(rn->data, rn->ctx, rn->allocdata);
-    Enj_RenderListRemove(parent, rn);
+    Enj_RenderListRemove_SDL(parent, rn);
 
     lrn->rn = NULL;
 
-    //Remove from parent luarendernode's table
+    //Remove from parent lua rendernode's table
     lua_getiuservalue(L, 1, 1);
     lua_pushvalue(L, 1);
     lua_pushnil(L);
@@ -66,31 +66,31 @@ static int luadestroysprite(lua_State *L){
 }
 
 static int luagetspritex(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     lua_pushinteger(L, sp->x);
     return 1;
 }
 static int luasetspritex(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -103,31 +103,31 @@ static int luasetspritex(lua_State *L){
     return 0;
 }
 static int luagetspritey(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     lua_pushinteger(L, sp->y);
     return 1;
 }
 static int luasetspritey(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -140,31 +140,31 @@ static int luasetspritey(lua_State *L){
     return 0;
 }
 static int luagetspritewidth(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     lua_pushinteger(L, sp->w);
     return 1;
 }
 static int luasetspritewidth(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -177,31 +177,31 @@ static int luasetspritewidth(lua_State *L){
     return 0;
 }
 static int luagetspriteheight(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     lua_pushinteger(L, sp->h);
     return 1;
 }
 static int luasetspriteheight(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -215,9 +215,9 @@ static int luasetspriteheight(lua_State *L){
 }
 
 static int luagetspriteglyph(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
@@ -229,16 +229,16 @@ static int luagetspriteglyph(lua_State *L){
 }
 
 static int luasetspriteglyph(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
     lua_getfield(L, 3, "asset");
@@ -267,31 +267,31 @@ static int luasetspriteglyph(lua_State *L){
 }
 
 static int luagetspriter(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     lua_pushinteger(L, sp->fill[0]);
     return 1;
 }
 static int luasetspriter(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -305,31 +305,31 @@ static int luasetspriter(lua_State *L){
 }
 
 static int luagetspriteg(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     lua_pushinteger(L, sp->fill[1]);
     return 1;
 }
 static int luasetspriteg(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -343,31 +343,31 @@ static int luasetspriteg(lua_State *L){
 }
 
 static int luagetspriteb(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     lua_pushinteger(L, sp->fill[2]);
     return 1;
 }
 static int luasetspriteb(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -381,31 +381,31 @@ static int luasetspriteb(lua_State *L){
 }
 
 static int luagetspritea(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     lua_pushinteger(L, sp->fill[3]);
     return 1;
 }
 static int luasetspritea(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -420,31 +420,31 @@ static int luasetspritea(lua_State *L){
 
 
 static int luagetspritecenterx(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     lua_pushinteger(L, sp->xcen);
     return 1;
 }
 static int luasetspritecenterx(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -457,31 +457,31 @@ static int luasetspritecenterx(lua_State *L){
     return 0;
 }
 static int luagetspritecentery(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     lua_pushinteger(L, sp->ycen);
     return 1;
 }
 static int luasetspritecentery(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -495,31 +495,31 @@ static int luasetspritecentery(lua_State *L){
 }
 
 static int luagetspriteangle(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     lua_pushnumber(L, 3.1415926535898 / 32768. * (double)sp->angle);
     return 1;
 }
 static int luasetspriteangle(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_Sprite *sp = (Enj_Sprite *)rn->data;
+    Enj_Sprite_SDL *sp = (Enj_Sprite_SDL *)rn->data;
 
     int isnum;
     lua_Number v = lua_tonumberx(L, 2, &isnum);
@@ -545,7 +545,7 @@ static int luasetspriteangle(lua_State *L){
 
 
 
-void bindsprite(
+void bindsprite_SDL(
     lua_State *L,
     SDL_Renderer *rend,
     Enj_Allocator *allocsprite

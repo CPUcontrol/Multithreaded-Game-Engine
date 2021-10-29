@@ -8,10 +8,10 @@ typedef struct lua_State lua_State;
 
 typedef struct Enj_Allocator Enj_Allocator;
 
-void bindsprite(
+void bindprimrect_SDL(
     lua_State *L,
     SDL_Renderer *rend,
-    Enj_Allocator *allocsprite
+    Enj_Allocator *allocprimrect
 );
 
 #ifdef __cplusplus

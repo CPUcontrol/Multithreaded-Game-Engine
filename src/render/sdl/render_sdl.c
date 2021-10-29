@@ -1,15 +1,15 @@
 #include <SDL_render.h>
 
-#include "sprite.h"
-#include "primrect.h"
-#include "renderlist.h"
+#include "sprite_sdl.h"
+#include "primrect_sdl.h"
+#include "renderlist_sdl.h"
 
 #include "../../core/allocator.h"
 #include "../../core/graphics/sdl/glyph_sdl.h"
 #include "../../core/graphics/sdl/texture_sdl.h"
 
-void Enj_Sprite_OnRender(void *d, void *ctx, int xoffset, int yoffset){
-    Enj_Sprite *sprite = (Enj_Sprite *)d;
+void Enj_Sprite_OnRender_SDL(void *d, void *ctx, int xoffset, int yoffset){
+    Enj_Sprite_SDL *sprite = (Enj_Sprite_SDL *)d;
     SDL_Renderer *rend = (SDL_Renderer *)ctx;
 
     SDL_Rect drawrect;
@@ -40,8 +40,8 @@ void Enj_Sprite_OnRender(void *d, void *ctx, int xoffset, int yoffset){
 
 }
 
-void Enj_PrimRectLine_OnRender(void *d, void *ctx, int xoffset, int yoffset){
-    Enj_PrimRect *pr = (Enj_PrimRect *)d;
+void Enj_PrimRectLine_OnRender_SDL(void *d, void *ctx, int xoffset, int yoffset){
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)d;
     SDL_Renderer *rend = (SDL_Renderer *)ctx;
 
     SDL_Rect drawrect;
@@ -64,8 +64,8 @@ void Enj_PrimRectLine_OnRender(void *d, void *ctx, int xoffset, int yoffset){
     SDL_RenderDrawRect(rend, &drawrect);
 }
 
-void Enj_PrimRectFill_OnRender(void *d, void *ctx, int xoffset, int yoffset){
-    Enj_PrimRect *pr = (Enj_PrimRect *)d;
+void Enj_PrimRectFill_OnRender_SDL(void *d, void *ctx, int xoffset, int yoffset){
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)d;
     SDL_Renderer *rend = (SDL_Renderer *)ctx;
 
     SDL_Rect drawrect;
@@ -89,18 +89,18 @@ void Enj_PrimRectFill_OnRender(void *d, void *ctx, int xoffset, int yoffset){
 }
 
 static int rendernodecmp(Enj_ListNode *a, Enj_ListNode *b){
-    Enj_RenderNode *nodea = (Enj_RenderNode *)
-            ((char *)a - offsetof(Enj_RenderNode, listnode));
+    Enj_RenderNode_SDL *nodea = (Enj_RenderNode_SDL *)
+            ((char *)a - offsetof(Enj_RenderNode_SDL, listnode));
 
-    Enj_RenderNode *nodeb = (Enj_RenderNode *)
-            ((char *)b - offsetof(Enj_RenderNode, listnode));
+    Enj_RenderNode_SDL *nodeb = (Enj_RenderNode_SDL *)
+            ((char *)b - offsetof(Enj_RenderNode_SDL, listnode));
 
     return   (nodea->priority > nodeb->priority)
             -(nodea->priority < nodeb->priority);
 }
 
-void Enj_RenderList_OnRender(void *d, void *ctx, int xoffset, int yoffset){
-    Enj_RenderList *rl = (Enj_RenderList *)d;
+void Enj_RenderList_OnRender_SDL(void *d, void *ctx, int xoffset, int yoffset){
+    Enj_RenderList_SDL *rl = (Enj_RenderList_SDL *)d;
     Enj_ListSort(&rl->list, &rendernodecmp);
 
     int xo = rl->xoffset + xoffset;
@@ -108,8 +108,8 @@ void Enj_RenderList_OnRender(void *d, void *ctx, int xoffset, int yoffset){
 
     Enj_ListNode *it = rl->list.head;
     while(it){
-        Enj_RenderNode *node = (Enj_RenderNode *)
-            ((char *)it - offsetof(Enj_RenderNode, listnode));
+        Enj_RenderNode_SDL *node = (Enj_RenderNode_SDL *)
+            ((char *)it - offsetof(Enj_RenderNode_SDL, listnode));
 
         if (node->active)
             (*node->onrender)(

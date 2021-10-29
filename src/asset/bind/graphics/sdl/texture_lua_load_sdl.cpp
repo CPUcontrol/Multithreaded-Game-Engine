@@ -17,7 +17,7 @@
 
 #include "../../../luaasset.h"
 
-#include "texture_binder.hpp"
+#include "texture_binder_sdl.hpp"
 #include "../../texture_lua_load.h"
 
 int Enj_Lua_TextureOnPreload(lua_State *L){
@@ -25,7 +25,7 @@ int Enj_Lua_TextureOnPreload(lua_State *L){
 
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
-    texture_binder *ctx = (texture_binder *)la->ctx;
+    texture_binder_SDL *ctx = (texture_binder_SDL *)la->ctx;
     Enj_Texture_SDL *e = (Enj_Texture_SDL *)Enj_Alloc(&ctx->alloc, sizeof(Enj_Texture_SDL));
     if(!e) return 0;
 
@@ -125,7 +125,7 @@ int Enj_Lua_TextureOnPreload(lua_State *L){
 int Enj_Lua_TextureOnUnload(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
     Enj_Texture_SDL *e = (Enj_Texture_SDL *)la->data;
-    texture_binder *ctx = (texture_binder *)la->ctx;
+    texture_binder_SDL *ctx = (texture_binder_SDL *)la->ctx;
 
     SDL_DestroyTexture(e->tx);
     Enj_Free(&ctx->alloc, e);

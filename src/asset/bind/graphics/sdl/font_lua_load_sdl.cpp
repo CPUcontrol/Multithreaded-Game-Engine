@@ -16,12 +16,12 @@
 
 #include "../../../luaasset.h"
 #include "../../../graphics/luafont.h"
-#include "font_binder.hpp"
+#include "font_binder_sdl.hpp"
 #include "../../font_lua_load.h"
 
-#include "texture_binder.hpp"
+#include "texture_binder_sdl.hpp"
 #include "../../texture_lua_load.h"
-#include "glyph_binder.hpp"
+#include "glyph_binder_sdl.hpp"
 #include "../../glyph_lua_load.h"
 
 #include <ft2build.h>
@@ -58,7 +58,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
 
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
-    font_binder *ctx = (font_binder *)la->ctx;
+    font_binder_SDL *ctx = (font_binder_SDL *)la->ctx;
     luafont *lf = (luafont *)lua_newuserdatauv(L, sizeof(luafont), 0);
     lua_setiuservalue(L, 1, 1);
 

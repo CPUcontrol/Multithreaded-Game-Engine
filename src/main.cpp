@@ -718,16 +718,16 @@ quit_app:
 
 #else
 
-#include "render/sdl/luarendernode.h"
-#include "render/sdl/renderlist.h"
-#include "render/sdl/renderlist_lua.h"
-#include "render/sdl/sprite.h"
-#include "render/sdl/sprite_lua.h"
-#include "render/sdl/primrect.h"
-#include "render/sdl/primrect_lua.h"
-#include "asset/bind/graphics/sdl/texture_binder.hpp"
-#include "asset/bind/graphics/sdl/glyph_binder.hpp"
-#include "asset/bind/graphics/sdl/font_binder.hpp"
+#include "render/sdl/luarendernode_sdl.h"
+#include "render/sdl/renderlist_sdl.h"
+#include "render/sdl/renderlist_lua_sdl.h"
+#include "render/sdl/sprite_sdl.h"
+#include "render/sdl/sprite_lua_sdl.h"
+#include "render/sdl/primrect_sdl.h"
+#include "render/sdl/primrect_lua_sdl.h"
+#include "asset/bind/graphics/sdl/texture_binder_sdl.hpp"
+#include "asset/bind/graphics/sdl/glyph_binder_sdl.hpp"
+#include "asset/bind/graphics/sdl/font_binder_sdl.hpp"
 
 typedef struct maindata{
     std::filesystem::path basepath;
@@ -764,7 +764,7 @@ typedef struct maindata{
     Enj_Allocator allorn;
     Enj_PoolAllocatorData datrn;
 
-    Enj_RenderList *renderlist;
+    Enj_RenderList_SDL *renderlist;
 
 } maindata;
 
@@ -923,27 +923,27 @@ int main(int argc, char **argv){
     initbuiltins(mdata.L);
 
     //Make grid of renderlist
-    mdata.bufrl = malloc(sizeof(Enj_RenderList)*MAX_SPRITES);
-    Enj_InitPoolAllocator(&mdata.allorl, &mdata.datrl, mdata.bufrl, sizeof(Enj_RenderList)*MAX_SPRITES, sizeof(Enj_RenderList));
-    mdata.bufrn = malloc(sizeof(Enj_RenderNode)*MAX_SPRITES);
-    Enj_InitPoolAllocator(&mdata.allorn, &mdata.datrn, mdata.bufrn, sizeof(Enj_RenderNode)*MAX_SPRITES, sizeof(Enj_RenderNode));
+    mdata.bufrl = malloc(sizeof(Enj_RenderList_SDL)*MAX_SPRITES);
+    Enj_InitPoolAllocator(&mdata.allorl, &mdata.datrl, mdata.bufrl, sizeof(Enj_RenderList_SDL)*MAX_SPRITES, sizeof(Enj_RenderList_SDL));
+    mdata.bufrn = malloc(sizeof(Enj_RenderNode_SDL)*MAX_SPRITES);
+    Enj_InitPoolAllocator(&mdata.allorn, &mdata.datrn, mdata.bufrn, sizeof(Enj_RenderNode_SDL)*MAX_SPRITES, sizeof(Enj_RenderNode_SDL));
 
     bindrender(mdata.L);
 
     //Make grid of sprites
-    mdata.buf = malloc(sizeof(Enj_Sprite)*MAX_SPRITES);
-    Enj_InitPoolAllocator(&mdata.allo, &mdata.dat, mdata.buf, sizeof(Enj_Sprite)*MAX_SPRITES, sizeof(Enj_Sprite));
-    bindsprite(mdata.L, mdata.rend, &mdata.allo);
+    mdata.buf = malloc(sizeof(Enj_Sprite_SDL)*MAX_SPRITES);
+    Enj_InitPoolAllocator(&mdata.allo, &mdata.dat, mdata.buf, sizeof(Enj_Sprite_SDL)*MAX_SPRITES, sizeof(Enj_Sprite_SDL));
+    bindsprite_SDL(mdata.L, mdata.rend, &mdata.allo);
     //Make grid of rects
-    mdata.bufpr = malloc(sizeof(Enj_PrimRect)*MAX_SPRITES);
-    Enj_InitPoolAllocator(&mdata.allopr, &mdata.datpr, mdata.bufpr, sizeof(Enj_PrimRect)*MAX_SPRITES, sizeof(Enj_PrimRect));
-    bindprimrect(mdata.L, mdata.rend, &mdata.allopr);
+    mdata.bufpr = malloc(sizeof(Enj_PrimRect_SDL)*MAX_SPRITES);
+    Enj_InitPoolAllocator(&mdata.allopr, &mdata.datpr, mdata.bufpr, sizeof(Enj_PrimRect_SDL)*MAX_SPRITES, sizeof(Enj_PrimRect_SDL));
+    bindprimrect_SDL(mdata.L, mdata.rend, &mdata.allopr);
 
-    bindrenderlist(mdata.L, mdata.rend,
+    bindrenderlist_SDL(mdata.L, mdata.rend,
         &mdata.allorl, &mdata.allorn, &mdata.allo, &mdata.allopr);
 
     //Init root render to renderlist
-    mdata.renderlist = bindroot_renderlist(mdata.L, mdata.rend, &mdata.allorl, &mdata.allorn);
+    mdata.renderlist = bindroot_renderlist_SDL(mdata.L, mdata.rend, &mdata.allorl, &mdata.allorn);
 
     //GUI button
     mdata.bufb = malloc(64*128);
@@ -984,13 +984,13 @@ int main(int argc, char **argv){
     bindasset(mdata.L);
     //Binding texture asset
 
-    texture_binder texture_b(md, mdata.basepath, mdata.rend, mdata.L);
+    texture_binder_SDL texture_b(md, mdata.basepath, mdata.rend, mdata.L);
     bindtexture(mdata.L, &texture_b,
         Enj_Lua_TextureOnPreload,
         Enj_Lua_TextureOnUnload,
         Enj_Lua_TextureOnCanUnload);
 
-    glyph_binder glyph_b(md, mdata.L);
+    glyph_binder_SDL glyph_b(md, mdata.L);
     bindglyph(mdata.L, &glyph_b,
         Enj_Lua_GlyphOnPreload,
         Enj_Lua_GlyphOnUnload,
@@ -1002,7 +1002,7 @@ int main(int argc, char **argv){
         Enj_Lua_SoundOnUnload,
         Enj_Lua_SoundOnCanUnload);
 
-    font_binder font_b(md, mdata.basepath, mdata.rend, mdata.L, texture_b, glyph_b);
+    font_binder_SDL font_b(md, mdata.basepath, mdata.rend, mdata.L, texture_b, glyph_b);
     bindfont(mdata.L, &font_b,
         Enj_Lua_FontOnPreload,
         Enj_Lua_FontOnUnload,
@@ -1215,7 +1215,7 @@ int main(int argc, char **argv){
                 255);
             SDL_RenderClear(mdata.rend);
 
-            Enj_RenderList_OnRender(mdata.renderlist, mdata.rend, 0, 0);
+            Enj_RenderList_OnRender_SDL(mdata.renderlist, mdata.rend, 0, 0);
 
             SDL_RenderPresent(mdata.rend);
         }
@@ -1252,11 +1252,11 @@ quit_app:
     worker.join();
 
     for(Enj_ListNode *it = mdata.renderlist->list.head; it; it = it->next){
-        Enj_RenderNode *node = (Enj_RenderNode *)
-            ((char *)it - offsetof(Enj_RenderNode, listnode));
+        Enj_RenderNode_SDL *node = (Enj_RenderNode_SDL *)
+            ((char *)it - offsetof(Enj_RenderNode_SDL, listnode));
         (*node->onfreedata)(node->data, node->ctx, node->allocdata);
     }
-    Enj_RenderListFree(mdata.renderlist);
+    Enj_RenderListFree_SDL(mdata.renderlist);
 
     free(mdata.bufrn);
     free(mdata.bufrl);

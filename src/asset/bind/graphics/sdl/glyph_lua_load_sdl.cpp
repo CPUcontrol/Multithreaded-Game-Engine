@@ -14,7 +14,7 @@
 
 #include "../../../luaasset.h"
 
-#include "glyph_binder.hpp"
+#include "glyph_binder_sdl.hpp"
 #include "../../glyph_lua_load.h"
 
 int Enj_Lua_GlyphOnPreload(lua_State *L){
@@ -70,7 +70,7 @@ int Enj_Lua_GlyphOnPreload(lua_State *L){
     //Fillout the created asset
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
-    glyph_binder *ctx = (glyph_binder *)la->ctx;
+    glyph_binder_SDL *ctx = (glyph_binder_SDL *)la->ctx;
     Enj_Glyph_SDL *e = (Enj_Glyph_SDL *)Enj_Alloc(&ctx->alloc, sizeof(Enj_Glyph_SDL));
     if(!e) return 0;
 
@@ -97,7 +97,7 @@ int Enj_Lua_GlyphOnPreload(lua_State *L){
 int Enj_Lua_GlyphOnUnload(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
     Enj_Glyph_SDL *e = (Enj_Glyph_SDL *)la->data;
-    glyph_binder *ctx = (glyph_binder *)la->ctx;
+    glyph_binder_SDL *ctx = (glyph_binder_SDL *)la->ctx;
 
     lua_getiuservalue(L, 1, 1);
 

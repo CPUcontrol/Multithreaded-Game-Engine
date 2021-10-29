@@ -2,17 +2,17 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-#include "renderlist.h"
+#include "renderlist_sdl.h"
 
-#include "luarendernode.h"
+#include "luarendernode_sdl.h"
 
 #include "../../core/lua_extra.h"
 #include "../lua_extra_render.h"
 
 int Enj_Lua_GetRenderNodePriority(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
@@ -23,9 +23,9 @@ int Enj_Lua_GetRenderNodePriority(lua_State *L){
     return 1;
 }
 int Enj_Lua_SetRenderNodePriority(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
@@ -44,9 +44,9 @@ int Enj_Lua_SetRenderNodePriority(lua_State *L){
 }
 
 int Enj_Lua_GetRenderNodeActive(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
@@ -57,9 +57,9 @@ int Enj_Lua_GetRenderNodeActive(lua_State *L){
     return 1;
 }
 int Enj_Lua_SetRenderNodeActive(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");

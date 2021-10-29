@@ -2,17 +2,17 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-#include "primrect.h"
-#include "primrect_lua.h"
+#include "primrect_sdl.h"
+#include "primrect_lua_sdl.h"
 
 #include "../../core/allocator.h"
 #include "../../core/lua_extra.h"
 
 #include "../../asset/luaasset.h"
 
-#include "renderlist.h"
+#include "renderlist_sdl.h"
 
-#include "luarendernode.h"
+#include "luarendernode_sdl.h"
 #include "../lua_extra_render.h"
 
 static int luadestroyprimrect(lua_State *L){
@@ -26,24 +26,24 @@ static int luadestroyprimrect(lua_State *L){
         return Enj_Lua_Error(L);
     }
 
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
 
-    Enj_RenderNode *rn = lrn->rn;
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_RenderList *parent = lrn->parent;
+    Enj_RenderList_SDL *parent = lrn->parent;
 
     (*rn->onfreedata)(rn->data, rn->ctx, rn->allocdata);
-    Enj_RenderListRemove(parent, rn);
+    Enj_RenderListRemove_SDL(parent, rn);
 
     lrn->rn = NULL;
 
-    //Remove from parent luarendernode's table
+    //Remove from parent lua rendernode's table
     lua_getiuservalue(L, 1, 1);
     lua_pushvalue(L, 1);
     lua_pushnil(L);
@@ -56,31 +56,31 @@ static int luadestroyprimrect(lua_State *L){
 }
 
 static int luagetprimrectx(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     lua_pushinteger(L, pr->x);
     return 1;
 }
 static int luasetprimrectx(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -93,31 +93,31 @@ static int luasetprimrectx(lua_State *L){
     return 0;
 }
 static int luagetprimrecty(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     lua_pushinteger(L, pr->y);
     return 1;
 }
 static int luasetprimrecty(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -130,31 +130,31 @@ static int luasetprimrecty(lua_State *L){
     return 0;
 }
 static int luagetprimrectwidth(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     lua_pushinteger(L, pr->w);
     return 1;
 }
 static int luasetprimrectwidth(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -167,31 +167,31 @@ static int luasetprimrectwidth(lua_State *L){
     return 0;
 }
 static int luagetprimrectheight(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     lua_pushinteger(L, pr->h);
     return 1;
 }
 static int luasetprimrectheight(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -205,31 +205,31 @@ static int luasetprimrectheight(lua_State *L){
 }
 
 static int luagetprimrectr(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     lua_pushinteger(L, pr->r);
     return 1;
 }
 static int luasetprimrectr(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -243,31 +243,31 @@ static int luasetprimrectr(lua_State *L){
 }
 
 static int luagetprimrectg(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     lua_pushinteger(L, pr->g);
     return 1;
 }
 static int luasetprimrectg(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -281,31 +281,31 @@ static int luasetprimrectg(lua_State *L){
 }
 
 static int luagetprimrectb(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     lua_pushinteger(L, pr->b);
     return 1;
 }
 static int luasetprimrectb(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -319,31 +319,31 @@ static int luasetprimrectb(lua_State *L){
 }
 
 static int luagetprimrecta(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     lua_pushinteger(L, pr->a);
     return 1;
 }
 static int luasetprimrecta(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -357,31 +357,31 @@ static int luasetprimrecta(lua_State *L){
 }
 
 static int luagetprimrectcenterx(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     lua_pushinteger(L, pr->xcen);
     return 1;
 }
 static int luasetprimrectcenterx(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -394,31 +394,31 @@ static int luasetprimrectcenterx(lua_State *L){
     return 0;
 }
 static int luagetprimrectcentery(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     lua_pushinteger(L, pr->ycen);
     return 1;
 }
 static int luasetprimrectcentery(lua_State *L){
-    luarendernode *lrn =
-        (luarendernode *)lua_touserdata(L, 1);
-    Enj_RenderNode *rn = lrn->rn;
+    luarendernode_SDL *lrn =
+        (luarendernode_SDL *)lua_touserdata(L, 1);
+    Enj_RenderNode_SDL *rn = lrn->rn;
 
     if(!rn){
         lua_pushliteral(L, "render node already destroyed");
         return Enj_Lua_Error(L);
     }
 
-    Enj_PrimRect *pr = (Enj_PrimRect *)rn->data;
+    Enj_PrimRect_SDL *pr = (Enj_PrimRect_SDL *)rn->data;
 
     int isint;
     lua_Integer v = lua_tointegerx(L, 2, &isint);
@@ -611,7 +611,7 @@ static void bindprimrectfill(
     lua_settop(L, 0);
 }
 
-void bindprimrect(
+void bindprimrect_SDL(
     lua_State *L,
     SDL_Renderer *rend,
     Enj_Allocator *allocprimrect

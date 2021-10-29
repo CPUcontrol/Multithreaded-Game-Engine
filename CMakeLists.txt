@@ -71,23 +71,23 @@ if (APP_RENDER_BACKEND STREQUAL "opengl")
     )
 else()
     set (CORE_SOURCE_RENDER
-        src/asset/graphics/sdl/texture_lua.c
-        src/asset/graphics/sdl/glyph_lua.c
+        src/asset/graphics/sdl/texture_lua_sdl.c
+        src/asset/graphics/sdl/glyph_lua_sdl.c
 
-        src/asset/bind/graphics/sdl/texture_binder.cpp
-        src/asset/bind/graphics/sdl/texture_lua_load.cpp
-        src/asset/bind/graphics/sdl/glyph_binder.cpp
-        src/asset/bind/graphics/sdl/glyph_lua_load.cpp
-        src/asset/bind/graphics/sdl/font_binder.cpp
-        src/asset/bind/graphics/sdl/font_lua_load.cpp
+        src/asset/bind/graphics/sdl/texture_binder_sdl.cpp
+        src/asset/bind/graphics/sdl/texture_lua_load_sdl.cpp
+        src/asset/bind/graphics/sdl/glyph_binder_sdl.cpp
+        src/asset/bind/graphics/sdl/glyph_lua_load_sdl.cpp
+        src/asset/bind/graphics/sdl/font_binder_sdl.cpp
+        src/asset/bind/graphics/sdl/font_lua_load_sdl.cpp
 
-        src/render/sdl/lua_extra_render.c
-        src/render/sdl/renderlist.c
-        src/render/sdl/renderlist_lua.c
-        src/render/sdl/sprite.c
-        src/render/sdl/sprite_lua.c
-        src/render/sdl/primrect.c
-        src/render/sdl/primrect_lua.c
+        src/render/sdl/lua_extra_render_sdl.c
+        src/render/sdl/renderlist_sdl.c
+        src/render/sdl/renderlist_lua_sdl.c
+        src/render/sdl/sprite_sdl.c
+        src/render/sdl/sprite_lua_sdl.c
+        src/render/sdl/primrect_sdl.c
+        src/render/sdl/primrect_lua_sdl.c
         src/render/sdl/render_sdl.c
     )
 endif ()

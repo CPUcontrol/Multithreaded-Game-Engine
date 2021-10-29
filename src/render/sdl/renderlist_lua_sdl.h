@@ -8,7 +8,7 @@ typedef struct lua_State lua_State;
 
 typedef struct Enj_Allocator Enj_Allocator;
 
-void bindrenderlist(
+void bindrenderlist_SDL(
     lua_State *L,
     SDL_Renderer *rend,
     Enj_Allocator *allocrenderlist,
@@ -17,7 +17,7 @@ void bindrenderlist(
     Enj_Allocator *allocprimrect
 );
 
-Enj_RenderList * bindroot_renderlist(
+Enj_RenderList_SDL * bindroot_renderlist_SDL(
     lua_State *L,
     SDL_Renderer *rend,
     Enj_Allocator *allocrenderlist,

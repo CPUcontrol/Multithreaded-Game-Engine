@@ -10,7 +10,7 @@ extern "C" {
 
 typedef struct Enj_Allocator Enj_Allocator;
 
-typedef struct Enj_RenderNode{
+typedef struct Enj_RenderNode_SDL{
     Enj_ListNode listnode;
 
     void *data;
@@ -23,23 +23,23 @@ typedef struct Enj_RenderNode{
 
     int priority;
     int active;
-} Enj_RenderNode;
+} Enj_RenderNode_SDL;
 
-typedef struct Enj_RenderList{
+typedef struct Enj_RenderList_SDL{
     Enj_List list;
     Enj_Allocator *allocnode;
 
     int xoffset;
     int yoffset;
-} Enj_RenderList;
+} Enj_RenderList_SDL;
 
-void Enj_RenderListInit(Enj_RenderList *rl, Enj_Allocator *an);
-void Enj_RenderListFree(Enj_RenderList *rl);
-Enj_RenderNode * Enj_RenderListAppend(Enj_RenderList *rl);
-void Enj_RenderListRemove(Enj_RenderList *rl, Enj_RenderNode *rn);
+void Enj_RenderListInit_SDL(Enj_RenderList_SDL *rl, Enj_Allocator *an);
+void Enj_RenderListFree_SDL(Enj_RenderList_SDL *rl);
+Enj_RenderNode_SDL * Enj_RenderListAppend_SDL(Enj_RenderList_SDL *rl);
+void Enj_RenderListRemove_SDL(Enj_RenderList_SDL *rl, Enj_RenderNode_SDL *rn);
 
-void Enj_RenderList_OnFree(void *d, void *ctx, Enj_Allocator *a);
-void Enj_RenderList_OnRender(void *d, void *ctx, int xoffset, int yoffset);
+void Enj_RenderList_OnFree_SDL(void *d, void *ctx, Enj_Allocator *a);
+void Enj_RenderList_OnRender_SDL(void *d, void *ctx, int xoffset, int yoffset);
 
 #ifdef __cplusplus
 }

@@ -47,7 +47,7 @@ static int luadestroyprimrectline(lua_State *L){
 
     lrn->rn = NULL;
 
-    //Remove from parent luarendernode_OpenGL's table
+    //Remove from parent lua rendernode's table
     lua_getiuservalue(L, 1, 1);
     lua_pushvalue(L, 1);
     lua_pushnil(L);

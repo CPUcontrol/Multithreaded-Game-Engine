@@ -547,8 +547,12 @@ void bindsprite_OpenGL(
 {
     lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
     lua_getfield(L, 1, "render");
-    //spritemeta
+    //meta
     lua_createtable(L, 0, 4);
+
+    //close metafunction
+    lua_pushcfunction(L, luadestroysprite);
+    lua_setfield(L, 3, "__close");
 
     //methods
     lua_createtable(L, 0, 1);

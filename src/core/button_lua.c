@@ -404,14 +404,19 @@ void bindbutton(lua_State *L, Enj_ButtonList *sl){
     lua_setglobal(L, "create_button");
 
     lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
-    //buttonmeta
+    //meta
     lua_createtable(L, 0, 4);
 
     //methods
     lua_createtable(L, 0, 1);
     lua_pushlightuserdata(L, sl);
     lua_pushcclosure(L, luadestroybutton, 1);
+
+    lua_pushvalue(L, 4);
     lua_setfield(L, 3, "destroy");
+
+    //close metafunction
+    lua_setfield(L, 2, "__close");
 
     //gets
     lua_createtable(L, 0, 8);

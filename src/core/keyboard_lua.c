@@ -232,14 +232,19 @@ void bindkeyboard(lua_State *L, Enj_KeyboardList *sl){
     lua_setglobal(L, "create_keyboard");
 
     lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
-    //keyboardmeta
+    //meta
     lua_createtable(L, 0, 4);
 
     //methods
     lua_createtable(L, 0, 1);
     lua_pushlightuserdata(L, sl);
     lua_pushcclosure(L, luadestroykeyboard, 1);
+
+    lua_pushvalue(L, 4);
     lua_setfield(L, 3, "destroy");
+
+    //close metafunction
+    lua_setfield(L, 2, "__close");
 
     //gets
     lua_createtable(L, 0, 3);

@@ -11,6 +11,7 @@ typedef struct Enj_Button Enj_Button;
 typedef struct Enj_Button{
     SDL_Rect rect;
     int hovering;
+    int pressing;
 
     void (*onpress)(int, int, void *);
     void (*onunpress)(int, int, void *);

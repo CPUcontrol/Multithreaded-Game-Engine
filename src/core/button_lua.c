@@ -109,6 +109,7 @@ static int luacreatebutton(lua_State *L){
     sp->button->onhover = luaonhover;
     sp->button->onunhover = luaonunhover;
     sp->button->hovering = 0;
+    sp->button->pressing = 0;
 
     sp->button->data = sp;
     sp->L = oL;

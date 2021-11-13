@@ -561,12 +561,15 @@ int main(int argc, char **argv){
                             & (yrel >= 0)
                             & (yrel < itb->rect.h)){
 
-                            if(itb->onpress){
-                                (*itb->onpress)(
-                                    ev.button.x,
-                                    ev.button.y,
-                                    itb->data);
+                            if(!itb->pressing){
+                                if(itb->onpress){
+                                    (*itb->onpress)(
+                                        ev.button.x,
+                                        ev.button.y,
+                                        itb->data);
 
+                                }
+                                itb->pressing = 1;
                                 break;
                             }
 
@@ -581,11 +584,14 @@ int main(int argc, char **argv){
                 if(ev.button.button == SDL_BUTTON_LEFT){
                     Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
                     while(itb){
-                        if(itb->onunpress){
-                            (*itb->onunpress)(
-                                ev.button.x,
-                                ev.button.y,
-                                itb->data);
+                        if(itb->pressing){
+                            if(itb->onunpress){
+                                (*itb->onunpress)(
+                                    ev.button.x,
+                                    ev.button.y,
+                                    itb->data);
+                            }
+                            itb->pressing = 0;
                         }
                         itb = itb->prev;
                     }
@@ -606,7 +612,7 @@ int main(int argc, char **argv){
                         & (yrel < itb->rect.h)){
 
                         if(!itb->hovering){
-                            itb->hovering = !itb->hovering;
+                            itb->hovering = 1;
                             if(itb->onhover){
                                 (*itb->onhover)(
                                     ev.button.x,
@@ -620,7 +626,7 @@ int main(int argc, char **argv){
                     }
                     else{
                         if(itb->hovering){
-                            itb->hovering = !itb->hovering;
+                            itb->hovering = 0;
                             if(itb->onunhover){
                                 (*itb->onunhover)(
                                     ev.button.x,
@@ -1127,12 +1133,15 @@ int main(int argc, char **argv){
                             & (yrel >= 0)
                             & (yrel < itb->rect.h)){
 
-                            if(itb->onpress){
-                                (*itb->onpress)(
-                                    ev.button.x,
-                                    ev.button.y,
-                                    itb->data);
+                            if(!itb->pressing){
+                                if(itb->onpress){
+                                    (*itb->onpress)(
+                                        ev.button.x,
+                                        ev.button.y,
+                                        itb->data);
 
+                                }
+                                itb->pressing = 1;
                                 break;
                             }
 
@@ -1147,11 +1156,14 @@ int main(int argc, char **argv){
                 if(ev.button.button == SDL_BUTTON_LEFT){
                     Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
                     while(itb){
-                        if(itb->onunpress){
-                            (*itb->onunpress)(
-                                ev.button.x,
-                                ev.button.y,
-                                itb->data);
+                        if(itb->pressing){
+                            if(itb->onunpress){
+                                (*itb->onunpress)(
+                                    ev.button.x,
+                                    ev.button.y,
+                                    itb->data);
+                            }
+                            itb->pressing = 0;
                         }
                         itb = itb->prev;
                     }
@@ -1172,7 +1184,7 @@ int main(int argc, char **argv){
                         & (yrel < itb->rect.h)){
 
                         if(!itb->hovering){
-                            itb->hovering = !itb->hovering;
+                            itb->hovering = 1;
                             if(itb->onhover){
                                 (*itb->onhover)(
                                     ev.button.x,
@@ -1186,7 +1198,7 @@ int main(int argc, char **argv){
                     }
                     else{
                         if(itb->hovering){
-                            itb->hovering = !itb->hovering;
+                            itb->hovering = 0;
                             if(itb->onunhover){
                                 (*itb->onunhover)(
                                     ev.button.x,

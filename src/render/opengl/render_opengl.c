@@ -641,6 +641,12 @@ void Enj_PrimRectLine_OnRender_OpenGL(
     float yu = pr->y - pr->ycen;
     float yd = yu + pr->h;
 
+    //Offset by 0.5 to align with center of pixel
+    xl += 0.5;
+    xr -= 0.5;
+    yu += 0.5;
+    yd -= 0.5;
+
     float cs = cos(pr->angle);
     float si = sin(pr->angle);
 

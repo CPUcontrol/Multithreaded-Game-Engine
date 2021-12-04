@@ -262,6 +262,8 @@ int main(int argc, char **argv){
 
     SDL_Init(SDL_INIT_EVERYTHING);
 
+    SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
+
     char *cwd = SDL_GetBasePath();
     mdata.basepath = std::filesystem::path(cwd);
     SDL_free(cwd);
@@ -830,6 +832,8 @@ int main(int argc, char **argv){
     std::chrono::high_resolution_clock::time_point start;
 
     SDL_Init(SDL_INIT_EVERYTHING);
+
+    SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
 
     char *cwd = SDL_GetBasePath();
     mdata.basepath = std::filesystem::path(cwd);

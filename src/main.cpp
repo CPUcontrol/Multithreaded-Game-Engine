@@ -516,10 +516,7 @@ int main(int argc, char **argv){
                     break;
                 }
                 break;
-            case SDL_KEYDOWN:
-                if(ev.key.keysym.sym == SDLK_ESCAPE)
-                    goto quit_app;
-                else {
+            case SDL_KEYDOWN:{
                     Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
                     if(itb){
                         if(itb->onpress){
@@ -1090,10 +1087,7 @@ int main(int argc, char **argv){
                     break;
                 }
                 break;
-            case SDL_KEYDOWN:
-                if(ev.key.keysym.sym == SDLK_ESCAPE)
-                    goto quit_app;
-                else {
+            case SDL_KEYDOWN:{
                     Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
                     if(itb){
                         if(itb->onpress){

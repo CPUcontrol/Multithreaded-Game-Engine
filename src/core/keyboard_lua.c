@@ -84,6 +84,7 @@ static int luacreatekeyboard(lua_State *L){
     sp->keyboard->onunpress = luaonunpress;
     sp->keyboard->oninput = luaoninput;
     sp->keyboard->textmode = 0;
+    sp->keyboard->active = 1;
 
     sp->keyboard->data = sp;
     sp->L = oL;
@@ -131,6 +132,35 @@ static int luadestroykeyboard(lua_State *L){
     return 0;
 }
 
+static int luagetkeyboardactive(lua_State *L){
+    luakeyboard *sp =
+        (luakeyboard *)lua_touserdata(L, 1);
+
+    if(!sp->keyboard){
+        lua_pushliteral(L, "keyboard already destroyed");
+        return Enj_Lua_Error(L);
+    }
+
+    lua_pushboolean(L, sp->keyboard->active);
+    return 1;
+}
+static int luasetkeyboardactive(lua_State *L){
+    luakeyboard *sp =
+        (luakeyboard *)lua_touserdata(L, 1);
+
+    if(!sp->keyboard){
+        lua_pushliteral(L, "keyboard already destroyed");
+        return Enj_Lua_Error(L);
+    }
+
+    if(!lua_isboolean(L, 2)){
+        lua_pushliteral(L, "assigned incompatible type");
+        return Enj_Lua_Error(L);
+    }
+
+    sp->keyboard->active = lua_toboolean(L, 2);
+    return 0;
+}
 static int luagetkeyboardonpress(lua_State *L){
     luakeyboard *sp =
         (luakeyboard *)lua_touserdata(L, 1);
@@ -247,7 +277,9 @@ void bindkeyboard(lua_State *L, Enj_KeyboardList *sl){
     lua_setfield(L, 2, "__close");
 
     //gets
-    lua_createtable(L, 0, 3);
+    lua_createtable(L, 0, 4);
+    lua_pushcfunction(L, luagetkeyboardactive);
+    lua_setfield(L, 4, "active");
     lua_pushcfunction(L, luagetkeyboardonpress);
     lua_setfield(L, 4, "on_press");
     lua_pushcfunction(L, luagetkeyboardonunpress);
@@ -259,7 +291,9 @@ void bindkeyboard(lua_State *L, Enj_KeyboardList *sl){
     lua_setfield(L, 2, "__index");
 
     //sets
-    lua_createtable(L, 0, 3);
+    lua_createtable(L, 0, 4);
+    lua_pushcfunction(L, luasetkeyboardactive);
+    lua_setfield(L, 3, "active");
     lua_pushcfunction(L, luasetkeyboardonpress);
     lua_setfield(L, 3, "on_press");
     lua_pushcfunction(L, luasetkeyboardonunpress);

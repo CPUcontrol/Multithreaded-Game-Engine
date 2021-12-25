@@ -13,6 +13,8 @@ typedef struct Enj_Button{
     int hovering;
     int pressing;
 
+    int active;
+
     void (*onpress)(int, int, void *);
     void (*onunpress)(int, int, void *);
     void (*onhover)(int, int, void *);

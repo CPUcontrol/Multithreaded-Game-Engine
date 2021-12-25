@@ -110,6 +110,7 @@ static int luacreatebutton(lua_State *L){
     sp->button->onunhover = luaonunhover;
     sp->button->hovering = 0;
     sp->button->pressing = 0;
+    sp->button->active = 1;
 
     sp->button->data = sp;
     sp->L = oL;
@@ -154,6 +155,35 @@ static int luadestroybutton(lua_State *L){
     lua_pushnil(L);
     lua_settable(L, 2);
 
+    return 0;
+}
+static int luagetbuttonactive(lua_State *L){
+    luabutton *sp =
+        (luabutton *)lua_touserdata(L, 1);
+
+    if(!sp->button){
+        lua_pushliteral(L, "button already destroyed");
+        return Enj_Lua_Error(L);
+    }
+
+    lua_pushboolean(L, sp->button->active);
+    return 1;
+}
+static int luasetbuttonactive(lua_State *L){
+    luabutton *sp =
+        (luabutton *)lua_touserdata(L, 1);
+
+    if(!sp->button){
+        lua_pushliteral(L, "button already destroyed");
+        return Enj_Lua_Error(L);
+    }
+
+    if(!lua_isboolean(L, 2)){
+        lua_pushliteral(L, "assigned incompatible type");
+        return Enj_Lua_Error(L);
+    }
+
+    sp->button->active = lua_toboolean(L, 2);
     return 0;
 }
 static int luagetbuttonx(lua_State *L){
@@ -420,7 +450,9 @@ void bindbutton(lua_State *L, Enj_ButtonList *sl){
     lua_setfield(L, 2, "__close");
 
     //gets
-    lua_createtable(L, 0, 8);
+    lua_createtable(L, 0, 9);
+    lua_pushcfunction(L, luagetbuttonactive);
+    lua_setfield(L, 4, "active");
     lua_pushcfunction(L, luagetbuttonx);
     lua_setfield(L, 4, "x");
     lua_pushcfunction(L, luagetbuttony);
@@ -442,7 +474,9 @@ void bindbutton(lua_State *L, Enj_ButtonList *sl){
     lua_setfield(L, 2, "__index");
 
     //sets
-    lua_createtable(L, 0, 8);
+    lua_createtable(L, 0, 9);
+    lua_pushcfunction(L, luasetbuttonactive);
+    lua_setfield(L, 3, "active");
     lua_pushcfunction(L, luasetbuttonx);
     lua_setfield(L, 3, "x");
     lua_pushcfunction(L, luasetbuttony);

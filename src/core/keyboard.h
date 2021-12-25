@@ -11,6 +11,8 @@ typedef struct Enj_Keyboard Enj_Keyboard;
 typedef struct Enj_Keyboard{
     int textmode;
 
+    int active;
+
     void (*onpress)(const char *, void *);
     void (*onunpress)(const char *, void *);
     void (*oninput)(const char *, void *);

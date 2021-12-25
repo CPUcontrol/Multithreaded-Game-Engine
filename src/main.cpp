@@ -487,16 +487,24 @@ int main(int argc, char **argv){
     while(!isquit){
         start = std::chrono::high_resolution_clock::now();
 
+        if(Enj_GetKeyboardListSize(&mdata.keyboards)){
+            for(
+                Enj_Keyboard *kb = Enj_GetKeyboardListTail(&mdata.keyboards);
+                kb;
+                kb = kb->prev
+            )
+            {
+                if(!kb->active) continue;
 
-        Enj_Keyboard *kb = Enj_GetKeyboardListTail(&mdata.keyboards);
-        if(kb){
-            if(kb->textmode && !SDL_IsTextInputActive()){
-                SDL_StartTextInput();
-            }
-            else if(!kb->textmode && SDL_IsTextInputActive()){
-                SDL_StopTextInput();
-            }
+                if(kb->textmode && !SDL_IsTextInputActive()){
+                    SDL_StartTextInput();
+                }
+                else if(!kb->textmode && SDL_IsTextInputActive()){
+                    SDL_StopTextInput();
+                }
 
+                break;
+            }
         }
         else if(SDL_IsTextInputActive()){
             SDL_StopTextInput();
@@ -517,63 +525,92 @@ int main(int argc, char **argv){
                 }
                 break;
             case SDL_KEYDOWN:{
-                    Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
-                    if(itb){
+                    for(
+                        Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
+                        itb;
+                        itb = itb->prev
+                    )
+                    {
+                        if(!itb->active) continue;
+
                         if(itb->onpress){
                             (*itb->onpress)(
                                 SDL_GetKeyName(ev.key.keysym.sym),
                                 itb->data);
                         }
+
+                        break;
                     }
                 }
                 break;
             case SDL_KEYUP:{
-                    Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
-                    if(itb){
+                    for(
+                        Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
+                        itb;
+                        itb = itb->prev
+                    )
+                    {
+                        if(!itb->active) continue;
+
                         if(itb->onunpress){
                             (*itb->onunpress)(
                                 SDL_GetKeyName(ev.key.keysym.sym),
                                 itb->data);
                         }
+
+                        break;
                     }
                 }
                 break;
             case SDL_TEXTINPUT:{
-                    Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
-                    if(itb){
+                    for(
+                        Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
+                        itb;
+                        itb = itb->prev
+                    )
+                    {
+                        if(!itb->active) continue;
+
                         if(itb->oninput){
                             (*itb->oninput)(
                                 ev.text.text,
                                 itb->data);
                         }
+
+                        break;
                     }
                 }
                 break;
             case SDL_MOUSEBUTTONDOWN:
                 if(ev.button.button == SDL_BUTTON_LEFT){
-                    Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
-                    while(itb){
+                    for(
+                        Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
+                        itb;
+                        itb = itb->prev
+                    )
+                    {
+                        if(!itb->active) continue;
+
                         int xrel = ev.button.x - itb->rect.x;
                         int yrel = ev.button.y - itb->rect.y;
-                        if(   (xrel >= 0)
+                        if(!( (xrel >= 0)
                             & (xrel < itb->rect.w)
                             & (yrel >= 0)
-                            & (yrel < itb->rect.h)){
+                            & (yrel < itb->rect.h)))
+                            continue;
 
-                            if(!itb->pressing){
-                                if(itb->onpress){
-                                    (*itb->onpress)(
-                                        ev.button.x,
-                                        ev.button.y,
-                                        itb->data);
+                        if(itb->pressing) continue;
 
-                                }
-                                itb->pressing = 1;
-                                break;
-                            }
+                        if(itb->onpress){
+                            (*itb->onpress)(
+                                ev.button.x,
+                                ev.button.y,
+                                itb->data);
 
                         }
-                        itb = itb->prev;
+                        itb->pressing = 1;
+
+                        break;
                     }
                 }
                 break;
@@ -581,18 +618,23 @@ int main(int argc, char **argv){
                 //Different from mouse button down in that it does not
                 //consider bounding boxes
                 if(ev.button.button == SDL_BUTTON_LEFT){
-                    Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
-                    while(itb){
-                        if(itb->pressing){
-                            if(itb->onunpress){
-                                (*itb->onunpress)(
-                                    ev.button.x,
-                                    ev.button.y,
-                                    itb->data);
-                            }
-                            itb->pressing = 0;
+                    for(
+                        Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
+                        itb;
+                        itb = itb->prev
+                    )
+                    {
+                        if(!itb->active) continue;
+
+                        if(!itb->pressing) continue;
+
+                        if(itb->onunpress){
+                            (*itb->onunpress)(
+                                ev.button.x,
+                                ev.button.y,
+                                itb->data);
                         }
-                        itb = itb->prev;
+                        itb->pressing = 0;
                     }
                 }
                 break;
@@ -600,8 +642,14 @@ int main(int argc, char **argv){
 
                 char hoverfound = 0;
 
-                Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
-                while(itb){
+                for(
+                    Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
+                    itb;
+                    itb = itb->prev
+                )
+                {
+                    if(!itb->active) continue;
+
                     int xrel = ev.button.x - itb->rect.x;
                     int yrel = ev.button.y - itb->rect.y;
                     if( !hoverfound
@@ -635,7 +683,6 @@ int main(int argc, char **argv){
                             }
                         }
                     }
-                    itb = itb->prev;
                 }
                 }
                 break;
@@ -1058,16 +1105,24 @@ int main(int argc, char **argv){
     while(!isquit){
         start = std::chrono::high_resolution_clock::now();
 
+        if(Enj_GetKeyboardListSize(&mdata.keyboards)){
+            for(
+                Enj_Keyboard *kb = Enj_GetKeyboardListTail(&mdata.keyboards);
+                kb;
+                kb = kb->prev
+            )
+            {
+                if(!kb->active) continue;
 
-        Enj_Keyboard *kb = Enj_GetKeyboardListTail(&mdata.keyboards);
-        if(kb){
-            if(kb->textmode && !SDL_IsTextInputActive()){
-                SDL_StartTextInput();
-            }
-            else if(!kb->textmode && SDL_IsTextInputActive()){
-                SDL_StopTextInput();
-            }
+                if(kb->textmode && !SDL_IsTextInputActive()){
+                    SDL_StartTextInput();
+                }
+                else if(!kb->textmode && SDL_IsTextInputActive()){
+                    SDL_StopTextInput();
+                }
 
+                break;
+            }
         }
         else if(SDL_IsTextInputActive()){
             SDL_StopTextInput();
@@ -1088,63 +1143,92 @@ int main(int argc, char **argv){
                 }
                 break;
             case SDL_KEYDOWN:{
-                    Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
-                    if(itb){
+                    for(
+                        Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
+                        itb;
+                        itb = itb->prev
+                    )
+                    {
+                        if(!itb->active) continue;
+
                         if(itb->onpress){
                             (*itb->onpress)(
                                 SDL_GetKeyName(ev.key.keysym.sym),
                                 itb->data);
                         }
+
+                        break;
                     }
                 }
                 break;
             case SDL_KEYUP:{
-                    Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
-                    if(itb){
+                    for(
+                        Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
+                        itb;
+                        itb = itb->prev
+                    )
+                    {
+                        if(!itb->active) continue;
+
                         if(itb->onunpress){
                             (*itb->onunpress)(
                                 SDL_GetKeyName(ev.key.keysym.sym),
                                 itb->data);
                         }
+
+                        break;
                     }
                 }
                 break;
             case SDL_TEXTINPUT:{
-                    Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
-                    if(itb){
+                    for(
+                        Enj_Keyboard *itb = Enj_GetKeyboardListTail(&mdata.keyboards);
+                        itb;
+                        itb = itb->prev
+                    )
+                    {
+                        if(!itb->active) continue;
+
                         if(itb->oninput){
                             (*itb->oninput)(
                                 ev.text.text,
                                 itb->data);
                         }
+
+                        break;
                     }
                 }
                 break;
             case SDL_MOUSEBUTTONDOWN:
                 if(ev.button.button == SDL_BUTTON_LEFT){
-                    Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
-                    while(itb){
+                    for(
+                        Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
+                        itb;
+                        itb = itb->prev
+                    )
+                    {
+                        if(!itb->active) continue;
+
                         int xrel = ev.button.x - itb->rect.x;
                         int yrel = ev.button.y - itb->rect.y;
-                        if(   (xrel >= 0)
+                        if(!( (xrel >= 0)
                             & (xrel < itb->rect.w)
                             & (yrel >= 0)
-                            & (yrel < itb->rect.h)){
+                            & (yrel < itb->rect.h)))
+                            continue;
 
-                            if(!itb->pressing){
-                                if(itb->onpress){
-                                    (*itb->onpress)(
-                                        ev.button.x,
-                                        ev.button.y,
-                                        itb->data);
+                        if(itb->pressing) continue;
 
-                                }
-                                itb->pressing = 1;
-                                break;
-                            }
+                        if(itb->onpress){
+                            (*itb->onpress)(
+                                ev.button.x,
+                                ev.button.y,
+                                itb->data);
 
                         }
-                        itb = itb->prev;
+                        itb->pressing = 1;
+
+                        break;
                     }
                 }
                 break;
@@ -1152,18 +1236,23 @@ int main(int argc, char **argv){
                 //Different from mouse button down in that it does not
                 //consider bounding boxes
                 if(ev.button.button == SDL_BUTTON_LEFT){
-                    Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
-                    while(itb){
-                        if(itb->pressing){
-                            if(itb->onunpress){
-                                (*itb->onunpress)(
-                                    ev.button.x,
-                                    ev.button.y,
-                                    itb->data);
-                            }
-                            itb->pressing = 0;
+                    for(
+                        Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
+                        itb;
+                        itb = itb->prev
+                    )
+                    {
+                        if(!itb->active) continue;
+
+                        if(!itb->pressing) continue;
+
+                        if(itb->onunpress){
+                            (*itb->onunpress)(
+                                ev.button.x,
+                                ev.button.y,
+                                itb->data);
                         }
-                        itb = itb->prev;
+                        itb->pressing = 0;
                     }
                 }
                 break;
@@ -1171,8 +1260,14 @@ int main(int argc, char **argv){
 
                 char hoverfound = 0;
 
-                Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
-                while(itb){
+                for(
+                    Enj_Button *itb = Enj_GetButtonListTail(&mdata.buttons);
+                    itb;
+                    itb = itb->prev
+                )
+                {
+                    if(!itb->active) continue;
+
                     int xrel = ev.button.x - itb->rect.x;
                     int yrel = ev.button.y - itb->rect.y;
                     if( !hoverfound
@@ -1206,7 +1301,6 @@ int main(int argc, char **argv){
                             }
                         }
                     }
-                    itb = itb->prev;
                 }
                 }
                 break;

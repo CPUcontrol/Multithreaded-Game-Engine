@@ -9,10 +9,10 @@ glyph_binder_SDL::glyph_binder_SDL(
     lua_State *L
 ): dispatch(md), Lmain(L)
 {
-    buf = malloc((1<<12)*sizeof(Enj_Glyph_SDL));
+    buf = malloc((1<<18)*sizeof(Enj_Glyph_SDL));
     if(!buf) return;
 
-    Enj_InitPoolAllocator(&alloc, &dat, buf, (1<<12)*sizeof(Enj_Glyph_SDL), sizeof(Enj_Glyph_SDL));
+    Enj_InitPoolAllocator(&alloc, &dat, buf, (1<<18)*sizeof(Enj_Glyph_SDL), sizeof(Enj_Glyph_SDL));
 }
 
 glyph_binder_SDL::~glyph_binder_SDL(){

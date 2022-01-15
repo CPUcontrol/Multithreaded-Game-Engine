@@ -9,10 +9,10 @@ glyph_binder_OpenGL::glyph_binder_OpenGL(
     lua_State *L
 ): dispatch(md), Lmain(L)
 {
-    buf = malloc((1<<12)*sizeof(Enj_Glyph_OpenGL));
+    buf = malloc((1<<18)*sizeof(Enj_Glyph_OpenGL));
     if(!buf) return;
 
-    Enj_InitPoolAllocator(&alloc, &dat, buf, (1<<12)*sizeof(Enj_Glyph_OpenGL), sizeof(Enj_Glyph_OpenGL));
+    Enj_InitPoolAllocator(&alloc, &dat, buf, (1<<18)*sizeof(Enj_Glyph_OpenGL), sizeof(Enj_Glyph_OpenGL));
 }
 
 glyph_binder_OpenGL::~glyph_binder_OpenGL(){

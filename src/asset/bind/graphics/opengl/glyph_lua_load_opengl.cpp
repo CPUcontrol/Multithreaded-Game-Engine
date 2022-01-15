@@ -13,6 +13,7 @@
 
 #include "../../../util/multi_dispatch.hpp"
 
+#include "../../../asset_codes.h"
 #include "../../../luaasset.h"
 
 #include "glyph_binder_opengl.hpp"
@@ -126,7 +127,7 @@ int Enj_Lua_GlyphOnPreload(lua_State *L){
     {
         std::lock_guard lock(ctx->dispatch.mq.mtx);
         ctx->dispatch.mq.q.push([la, Lmain = ctx->Lmain](){
-            luafinishpreloadasset(Lmain, la, 0);
+            luafinishpreloadasset(Lmain, la, ASSET_OK);
         });
     }
 

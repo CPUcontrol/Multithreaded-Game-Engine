@@ -27,6 +27,7 @@ set (CORE_SOURCE
     src/core/keyboard_lua.c
     src/core/lua_extra.c
 
+    src/asset/asset_codes.c
     src/asset/luaasset.c
     src/asset/asset_lua.c
     src/asset/lua_extra_asset.c

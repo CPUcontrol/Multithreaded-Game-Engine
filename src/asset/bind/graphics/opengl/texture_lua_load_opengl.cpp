@@ -15,6 +15,7 @@
 
 #include "../../../util/multi_dispatch.hpp"
 
+#include "../../../asset_codes.h"
 #include "../../../luaasset.h"
 
 #include "texture_binder_opengl.hpp"
@@ -41,7 +42,7 @@ int Enj_Lua_TextureOnPreload(lua_State *L){
 
                 std::lock_guard lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, e, ctx](){
-                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_FILE);
                     Enj_Free(&ctx->alloc, e);
                 });
 
@@ -52,7 +53,7 @@ int Enj_Lua_TextureOnPreload(lua_State *L){
 
                 std::lock_guard lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, e, ctx](){
-                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_FILE);
                     Enj_Free(&ctx->alloc, e);
                 });
 
@@ -65,7 +66,7 @@ int Enj_Lua_TextureOnPreload(lua_State *L){
 
                 std::lock_guard lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, e, ctx](){
-                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_PARAM);
                     Enj_Free(&ctx->alloc, e);
                 });
 
@@ -80,7 +81,7 @@ int Enj_Lua_TextureOnPreload(lua_State *L){
 
                 std::lock_guard lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, e, ctx](){
-                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_MEMORY);
                     Enj_Free(&ctx->alloc, e);
                 });
 
@@ -113,7 +114,7 @@ int Enj_Lua_TextureOnPreload(lua_State *L){
 
                 free(imgbuf);
 
-                luafinishpreloadasset(ctx->Lmain, la, 0);
+                luafinishpreloadasset(ctx->Lmain, la, ASSET_OK);
             });
 
         });

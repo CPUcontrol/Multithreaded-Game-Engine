@@ -14,6 +14,7 @@
 
 #include "../../../util/multi_dispatch.hpp"
 
+#include "../../../asset_codes.h"
 #include "../../../luaasset.h"
 #include "../../../graphics/luafont.h"
 #include "font_binder_opengl.hpp"
@@ -73,7 +74,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
             if(FT_Init_FreeType(&ft)){
                 std::lock_guard lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
-                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_LIBRARY);
                 });
 
                 return;
@@ -83,7 +84,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
 
                 std::lock_guard lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
-                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_FILE);
                 });
                 return;
             }
@@ -109,7 +110,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
 
                 std::lock_guard lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
-                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_MEMORY);
                 });
                 return;
             }
@@ -121,7 +122,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
 
                 std::lock_guard lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
-                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_MEMORY);
                 });
                 return;
             }
@@ -229,7 +230,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
 
                 std::lock_guard lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
-                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_PARAM);
                 });
                 return;
             }
@@ -250,7 +251,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
 
                 std::lock_guard lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
-                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_MEMORY);
                 });
                 return;
             }
@@ -273,7 +274,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
 
                     std::lock_guard lock(ctx->dispatch.mq.mtx);
                     ctx->dispatch.mq.q.push([la, ctx](){
-                        luafinishpreloadasset(ctx->Lmain, la, 1);
+                        luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_MEMORY);
                     });
                     return;
                 }
@@ -298,7 +299,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
 
                 std::lock_guard lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
-                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_MEMORY);
                 });
                 return;
             }
@@ -354,7 +355,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                         }
                         free(atlasarray);
                         free(glyphpairs);
-                        luafinishpreloadasset(ctx->Lmain, la, 1);
+                        luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_POOL);
                         return;
                     }
 
@@ -397,7 +398,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                         }
                         free(atlasarray);
                         free(glyphpairs);
-                        luafinishpreloadasset(ctx->Lmain, la, 1);
+                        luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_POOL);
 
                         return;
                     }
@@ -542,7 +543,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                 free(glyphpairs);
 
                 lua_settop(ctx->Lmain, 0);
-                luafinishpreloadasset(ctx->Lmain, la, 0);
+                luafinishpreloadasset(ctx->Lmain, la, ASSET_OK);
 
             });
 

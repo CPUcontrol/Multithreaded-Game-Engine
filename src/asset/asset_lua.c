@@ -4,6 +4,7 @@
 
 #include "../core/lua_extra.h"
 
+#include "asset_codes.h"
 #include "asset_lua.h"
 #include "luaasset.h"
 
@@ -56,7 +57,7 @@ static int lualoadasset(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
     if(la->flag & (1<<1)) {
         //Error in loading
-        lua_pushliteral(L, "cannot load asset");
+        lua_pushfstring(L, "cannot load asset - %s", getasseterrormsg(la->errcode));
         return Enj_Lua_Error(L);
     }
     if(!la->data){
@@ -83,7 +84,7 @@ static int lualoadasset_cont(lua_State *L, int status, lua_KContext ctx){
 
     if(la->flag & (1<<1)) {
         //Error in loading
-        lua_pushliteral(L, "cannot load asset");
+        lua_pushfstring(L, "cannot load asset - %s", getasseterrormsg(la->errcode));
         return Enj_Lua_Error(L);
     }
     if(!la->data){

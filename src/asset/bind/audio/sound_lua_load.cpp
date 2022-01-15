@@ -14,6 +14,7 @@
 
 #include "../../util/multi_dispatch.hpp"
 
+#include "../../asset_codes.h"
 #include "../../luaasset.h"
 
 #include "sound_binder.hpp"
@@ -39,7 +40,7 @@ int Enj_Lua_SoundOnPreload(lua_State *L){
 
                 std::lock_guard lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, e, ctx](){
-                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_FILE);
                     Enj_Free(&ctx->alloc, e);
                 });
 
@@ -58,7 +59,7 @@ int Enj_Lua_SoundOnPreload(lua_State *L){
 
                     std::lock_guard lock(ctx->dispatch.mq.mtx);
                     ctx->dispatch.mq.q.push([la, e, ctx](){
-                        luafinishpreloadasset(ctx->Lmain, la, 1);
+                        luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_MEMORY);
                         Enj_Free(&ctx->alloc, e);
                     });
 
@@ -79,7 +80,7 @@ int Enj_Lua_SoundOnPreload(lua_State *L){
 
                     std::lock_guard lock(ctx->dispatch.mq.mtx);
                     ctx->dispatch.mq.q.push([la, e, ctx](){
-                        luafinishpreloadasset(ctx->Lmain, la, 1);
+                        luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_PARAM);
                         Enj_Free(&ctx->alloc, e);
                     });
 
@@ -100,11 +101,11 @@ int Enj_Lua_SoundOnPreload(lua_State *L){
 
                 //if failure, chunk is null, so signal 1, otherwise success 0
                 if(!e->chunk){
-                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_LIBRARY);
                     Enj_Free(&ctx->alloc, e);
                 }
                 else{
-                    luafinishpreloadasset(ctx->Lmain, la, 0);
+                    luafinishpreloadasset(ctx->Lmain, la, ASSET_OK);
                 }
 
             });

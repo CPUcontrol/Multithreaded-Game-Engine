@@ -12,6 +12,7 @@
 
 #include "../../util/multi_dispatch.hpp"
 
+#include "../../asset_codes.h"
 #include "../../luaasset.h"
 
 #include "data_binder.hpp"
@@ -34,7 +35,7 @@ int Enj_Lua_DataOnPreload(lua_State *L){
 
                 std::lock_guard lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
-                    luafinishpreloadasset(ctx->Lmain, la, 1);
+                    luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_FILE);
                 });
 
                 return;
@@ -52,7 +53,7 @@ int Enj_Lua_DataOnPreload(lua_State *L){
 
                     std::lock_guard lock(ctx->dispatch.mq.mtx);
                     ctx->dispatch.mq.q.push([la, ctx](){
-                        luafinishpreloadasset(ctx->Lmain, la, 1);
+                        luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_MEMORY);
                     });
 
                     return;
@@ -72,7 +73,7 @@ int Enj_Lua_DataOnPreload(lua_State *L){
 
                     std::lock_guard lock(ctx->dispatch.mq.mtx);
                     ctx->dispatch.mq.q.push([la, ctx](){
-                        luafinishpreloadasset(ctx->Lmain, la, 1);
+                        luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_PARAM);
                     });
 
                     return;
@@ -97,7 +98,7 @@ int Enj_Lua_DataOnPreload(lua_State *L){
                 free(buffer);
 
                 lua_settop(ctx->Lmain, 0);
-                luafinishpreloadasset(ctx->Lmain, la, 0);
+                luafinishpreloadasset(ctx->Lmain, la, ASSET_OK);
 
             });
 

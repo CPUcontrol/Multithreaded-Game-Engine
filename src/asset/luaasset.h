@@ -13,6 +13,9 @@ typedef struct luaasset{
     void *data;
 
     size_t refcount;
+
+    int errcode;
+
     //bit 0 - ready
     //bit 1 - error
     //bit 2 - load can pass

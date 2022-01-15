@@ -6,6 +6,7 @@
 
 #include "../core/lua_extra.h"
 void luafinishpreloadasset(lua_State *L, luaasset *la, int code){
+    la->errcode = code;
 
     if(code == 0){
         //Set can pass bit, so load_asset can set ready bit

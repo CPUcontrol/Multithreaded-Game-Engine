@@ -5,6 +5,7 @@
 #include "../core/lua_extra.h"
 #include "lua_extra_asset.h"
 
+#include "asset_codes.h"
 #include "luaasset.h"
 
 int Enj_Lua_GetAssetDispatch(lua_State *L){

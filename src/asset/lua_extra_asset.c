@@ -72,7 +72,7 @@ int Enj_Lua_CreateAsset(lua_State *L){
     lua_call(L, tmp, 1);
 
     if(!lua_isuserdata(L, 1)){
-        lua_pushliteral(L, "cannot create asset");
+        lua_pushfstring(L, "cannot create asset - %s", getasseterrormsg(lua_tointeger(L, 2)));
         return Enj_Lua_Error(L);
     }
 

@@ -50,11 +50,23 @@ static int luagetnullchar(lua_State *L){
 }
 
 int Enj_Lua_FontOnPreload(lua_State *L){
-    if(!lua_isstring(L, 2)) return 0;
+    if(!lua_isstring(L, 2)) {
+        lua_pushnil(L);
+        lua_pushinteger(L, ASSET_ERROR_BADARGS);
+        return 2;
+    }
     int isint;
     lua_Integer fontsize = lua_tointegerx(L, 3, &isint);
-    if(!isint) return 0;
-    if((fontsize <= 0) | (fontsize > 1<<10)) return 0;
+    if(!isint) {
+        lua_pushnil(L);
+        lua_pushinteger(L, ASSET_ERROR_BADARGS);
+        return 2;
+    }
+    if((fontsize <= 0) | (fontsize > 1<<10)) {
+        lua_pushnil(L);
+        lua_pushinteger(L, ASSET_ERROR_BADARGS);
+        return 2;
+    }
     unsigned int fsize = (unsigned int)fontsize;
 
     luaasset *la = (luaasset *)lua_touserdata(L, 1);

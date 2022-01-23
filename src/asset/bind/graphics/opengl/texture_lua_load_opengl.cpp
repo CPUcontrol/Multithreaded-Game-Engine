@@ -22,13 +22,21 @@
 #include "../../texture_lua_load.h"
 
 int Enj_Lua_TextureOnPreload(lua_State *L){
-    if(!lua_isstring(L, 2)) return 0;
+    if (!lua_isstring(L, 2)) {
+        lua_pushnil(L);
+        lua_pushinteger(L, ASSET_ERROR_BADARGS);
+        return 2;
+    }
 
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
     texture_binder_OpenGL *ctx = (texture_binder_OpenGL *)la->ctx;
     Enj_Texture_OpenGL *e = (Enj_Texture_OpenGL *)Enj_Alloc(&ctx->alloc, sizeof(Enj_Texture_OpenGL));
-    if(!e) return 0;
+    if (!e) {
+        lua_pushnil(L);
+        lua_pushinteger(L, ASSET_ERROR_POOL);
+        return 2;
+    }
 
 
     {

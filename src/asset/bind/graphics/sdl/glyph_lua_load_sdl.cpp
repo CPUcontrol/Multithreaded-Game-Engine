@@ -26,10 +26,17 @@ int Enj_Lua_GlyphOnPreload(lua_State *L){
     lua_getfield(L, tmpidx+2, "texture");
     lua_getmetatable(L, 2);
 
-    if(!lua_compare(L, tmpidx+3, tmpidx+4, LUA_OPEQ)) return 0;
-
+    if(!lua_compare(L, tmpidx+3, tmpidx+4, LUA_OPEQ)) {
+        lua_pushnil(L);
+        lua_pushinteger(L, ASSET_ERROR_BADARGS);
+        return 2;
+    }
     luaasset *la_texture = (luaasset *)lua_touserdata(L, 2);
-    if(!(la_texture->flag & 1<<0)) return 0;
+    if(!(la_texture->flag & 1<<0)) {
+        lua_pushnil(L);
+        lua_pushinteger(L, ASSET_ERROR_BADARGS);
+        return 2;
+    }
     Enj_Texture_SDL *e_texture = (Enj_Texture_SDL *)la_texture->data;
 
     lua_Integer x;
@@ -46,16 +53,34 @@ int Enj_Lua_GlyphOnPreload(lua_State *L){
     case 6:
         int isint;
         x = lua_tointegerx(L, 3, &isint);
-        if(!isint) return 0;
+        if(!isint) {
+            lua_pushnil(L);
+            lua_pushinteger(L, ASSET_ERROR_BADARGS);
+            return 2;
+        }
         y = lua_tointegerx(L, 4, &isint);
-        if(!isint) return 0;
+        if(!isint) {
+            lua_pushnil(L);
+            lua_pushinteger(L, ASSET_ERROR_BADARGS);
+            return 2;
+        }
         w = lua_tointegerx(L, 5, &isint);
-        if(!isint) return 0;
+        if(!isint) {
+            lua_pushnil(L);
+            lua_pushinteger(L, ASSET_ERROR_BADARGS);
+            return 2;
+        }
         h = lua_tointegerx(L, 6, &isint);
-        if(!isint) return 0;
+        if(!isint) {
+            lua_pushnil(L);
+            lua_pushinteger(L, ASSET_ERROR_BADARGS);
+            return 2;
+        }
         break;
     default:
-        return 0;
+        lua_pushnil(L);
+        lua_pushinteger(L, ASSET_ERROR_BADARGS);
+        return 2;
     }
 
     if(
@@ -66,14 +91,23 @@ int Enj_Lua_GlyphOnPreload(lua_State *L){
     |   (x >= e_texture->width)
     |   (y >= e_texture->height)
     |   (x+w > e_texture->width)
-    |   (y+h > e_texture->height)) return 0;
+    |   (y+h > e_texture->height))
+    {
+        lua_pushnil(L);
+        lua_pushinteger(L, ASSET_ERROR_BADARGS);
+        return 2;
+    }
 
     //Fillout the created asset
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
     glyph_binder_SDL *ctx = (glyph_binder_SDL *)la->ctx;
     Enj_Glyph_SDL *e = (Enj_Glyph_SDL *)Enj_Alloc(&ctx->alloc, sizeof(Enj_Glyph_SDL));
-    if(!e) return 0;
+    if(!e) {
+        lua_pushnil(L);
+        lua_pushinteger(L, ASSET_ERROR_POOL);
+        return 2;
+    }
 
     e->rect.x = (int)x;
     e->rect.y = (int)y;

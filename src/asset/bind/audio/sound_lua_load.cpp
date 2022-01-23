@@ -21,13 +21,21 @@
 #include "../sound_lua_load.h"
 
 int Enj_Lua_SoundOnPreload(lua_State *L){
-    if(!lua_isstring(L, 2)) return 0;
+    if(!lua_isstring(L, 2)) {
+        lua_pushnil(L);
+        lua_pushinteger(L, ASSET_ERROR_BADARGS);
+        return 2;
+    }
 
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
     sound_binder *ctx = (sound_binder *)la->ctx;
     Enj_Sound *e = (Enj_Sound *)Enj_Alloc(&ctx->alloc, sizeof(Enj_Sound));
-    if(!e) return 0;
+    if(!e) {
+        lua_pushnil(L);
+        lua_pushinteger(L, ASSET_ERROR_POOL);
+        return 2;
+    }
 
 
     {

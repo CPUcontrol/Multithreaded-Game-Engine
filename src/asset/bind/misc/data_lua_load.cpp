@@ -19,7 +19,11 @@
 #include "../data_lua_load.h"
 
 int Enj_Lua_DataOnPreload(lua_State *L){
-    if(!lua_isstring(L, 2)) return 0;
+    if(!lua_isstring(L, 2))  {
+        lua_pushnil(L);
+        lua_pushinteger(L, ASSET_ERROR_BADARGS);
+        return 2;
+    }
 
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 

@@ -1,12 +1,13 @@
 #include "asset_codes.h"
 
-static const char *strings[6] = {
+static const char *strings[7] = {
     "",
     "out of memory",
     "no free assets in pool",
     "problem loading file",
     "external library error",
-    "asset too large"
+    "asset too large",
+    "bad arguments"
 };
 
 const char * getasseterrormsg(int code){

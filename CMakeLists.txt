@@ -39,6 +39,11 @@ set (CORE_SOURCE
     src/asset/bind/audio/sound_binder.cpp
     src/asset/bind/audio/sound_lua_load.cpp
 
+    src/asset/audio/music_lua.c
+
+    src/asset/bind/audio/music_binder.cpp
+    src/asset/bind/audio/music_lua_load.cpp
+
     src/asset/misc/data_lua.c
 
     src/asset/bind/misc/data_binder.cpp

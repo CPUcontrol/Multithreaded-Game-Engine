@@ -22,7 +22,6 @@
 
 #include "core/instream.h"
 #include "core/pngload.h"
-#include "core/sound.h"
 
 #include "core/button.h"
 #include "core/button_lua.h"
@@ -39,15 +38,18 @@
 #include "asset/graphics/texture_lua.h"
 #include "asset/graphics/glyph_lua.h"
 #include "asset/audio/sound_lua.h"
+#include "asset/audio/music_lua.h"
 #include "asset/graphics/font_lua.h"
 #include "asset/misc/data_lua.h"
 #include "asset/bind/texture_lua_load.h"
 #include "asset/bind/glyph_lua_load.h"
 #include "asset/bind/font_lua_load.h"
 #include "asset/bind/sound_lua_load.h"
+#include "asset/bind/music_lua_load.h"
 #include "asset/bind/data_lua_load.h"
 
 #include "asset/bind/audio/sound_binder.hpp"
+#include "asset/bind/audio/music_binder.hpp"
 #include "asset/bind/misc/data_binder.hpp"
 #include "asset/util/multi_dispatch.hpp"
 
@@ -437,6 +439,12 @@ int main(int argc, char **argv){
         Enj_Lua_SoundOnPreload,
         Enj_Lua_SoundOnUnload,
         Enj_Lua_SoundOnCanUnload);
+
+    music_binder music_b(md, mdata.basepath, mdata.L);
+    bindmusic(mdata.L, &music_b,
+        Enj_Lua_MusicOnPreload,
+        Enj_Lua_MusicOnUnload,
+        Enj_Lua_MusicOnCanUnload);
 
     font_binder_OpenGL font_b(md, mdata.basepath, mdata.L, texture_b, glyph_b);
     bindfont(mdata.L, &font_b,
@@ -1055,6 +1063,12 @@ int main(int argc, char **argv){
         Enj_Lua_SoundOnPreload,
         Enj_Lua_SoundOnUnload,
         Enj_Lua_SoundOnCanUnload);
+
+    music_binder music_b(md, mdata.basepath, mdata.L);
+    bindmusic(mdata.L, &music_b,
+        Enj_Lua_MusicOnPreload,
+        Enj_Lua_MusicOnUnload,
+        Enj_Lua_MusicOnCanUnload);
 
     font_binder_SDL font_b(md, mdata.basepath, mdata.rend, mdata.L, texture_b, glyph_b);
     bindfont(mdata.L, &font_b,

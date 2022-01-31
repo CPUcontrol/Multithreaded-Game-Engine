@@ -62,31 +62,43 @@ int Enj_ReadPNG(Enj_PNGLoader *p, void *buf, size_t size, size_t pitch){
 
     if(size < p->height * pitch) return 1;
 
-    if (p->color_type == PNG_COLOR_TYPE_PALETTE)
+    switch(p->color_type){
+    case PNG_COLOR_TYPE_PALETTE:
         png_set_palette_to_rgb((png_structp)p->png_ptr);
+        break;
+    case PNG_COLOR_TYPE_GRAY:
+    case PNG_COLOR_TYPE_GRAY_ALPHA:
+        png_set_gray_to_rgb((png_structp)p->png_ptr);
+        break;
+    default:
+        break;
+    }
 
     int has_tRNS = png_get_valid((png_structp)p->png_ptr,
         (png_infop)p->info_ptr,
         PNG_INFO_tRNS);
-    if (has_tRNS)
+
+    if (has_tRNS){
         png_set_tRNS_to_alpha((png_structp)p->png_ptr);
+    }
+    else{
+        png_set_filler ((png_structp)p->png_ptr, 255, PNG_FILLER_AFTER);
+    }
 
     if (p->bit_depth == 16)
         png_set_strip_16((png_structp)p->png_ptr);
 
-    if (p->color_type == PNG_COLOR_TYPE_GRAY ||
-        p->color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
-        png_set_gray_to_rgb((png_structp)p->png_ptr);
-
-    if (!has_tRNS)
-        png_set_filler ((png_structp)p->png_ptr, 255, PNG_FILLER_AFTER);
-
     png_color_16p image_background;
 
-    if (png_get_bKGD((png_structp)p->png_ptr,
-    (png_infop)p->info_ptr, &image_background))
+    if (png_get_bKGD(
+        (png_structp)p->png_ptr,
+        (png_infop)p->info_ptr,
+        &image_background))
+    {
         png_set_background((png_structp)p->png_ptr, image_background,
-          PNG_BACKGROUND_GAMMA_FILE, 1, 1.0);
+            PNG_BACKGROUND_GAMMA_FILE, 1, 1.0);
+    }
+
 
     for(unsigned int i = 0; i < p->height; ++i){
         png_read_row(

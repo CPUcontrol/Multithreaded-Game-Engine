@@ -81,12 +81,14 @@ int Enj_ReadPNG(Enj_PNGLoader *p, void *buf, size_t size, size_t pitch){
     if (has_tRNS){
         png_set_tRNS_to_alpha((png_structp)p->png_ptr);
     }
-    else{
-        png_set_filler ((png_structp)p->png_ptr, 255, PNG_FILLER_AFTER);
-    }
 
     if (p->bit_depth == 16)
         png_set_strip_16((png_structp)p->png_ptr);
+
+    if (!has_tRNS){
+        png_set_filler ((png_structp)p->png_ptr, 255, PNG_FILLER_AFTER);
+    }
+
 
     png_color_16p image_background;
 

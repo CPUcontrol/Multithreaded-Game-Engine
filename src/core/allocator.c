@@ -108,8 +108,7 @@ typedef struct heap_free heap_free;
 struct heap_free{
     heap_header header;
 
-    heap_free *left;
-    heap_free *right;
+    heap_free *chs[2]; /*Indices 0, 1 mean left, right children*/
     heap_free *parent;
 };
 
@@ -156,8 +155,8 @@ void Enj_InitHeapAllocator(
     r->header.next_color =
         ROUNDDOWN(size - sizeof(heap_header),
                 ALIGN_SIZE);
-    r->left = NULL;
-    r->right = NULL;
+    r->chs[0] = NULL;
+    r->chs[1] = NULL;
     r->parent = NULL;
 
     end->prev_alloc = ROUNDDOWN(size - sizeof(heap_header),
@@ -256,58 +255,41 @@ static heap_free * freeuncle(heap_free *f){
     heap_free *p = f->parent;
     heap_free *gp = p->parent;
 
-    size_t memboff =
-        p == gp->left
-        ? offsetof(heap_free, right)
-        : offsetof(heap_free, left);
-
-    return *(heap_free **)((char *)gp + memboff);
+    return gp->chs[p == gp->chs[0]];
 }
 
 static void freerotateleft(Enj_HeapAllocatorData* h, heap_free *f){
-    heap_free *c = f->right;
+    heap_free *c = f->chs[1];
 
     if (f->parent) {
-
-        size_t memboff =
-            f->parent->left == f
-            ? offsetof(heap_free, left)
-            : offsetof(heap_free, right);
-
-        *(heap_free **)((char *)f->parent + memboff) = c;
+        f->parent->chs[f->parent->chs[1] == f] = c;
     }
     else h->root = c;
 
     c->parent = f->parent;
 
-    f->right = c->left;
-    if(c->left) c->left->parent = f;
+    f->chs[1] = c->chs[0];
+    if(c->chs[0]) c->chs[0]->parent = f;
 
     f->parent = c;
-    c->left = f;
+    c->chs[0] = f;
 }
 
 static void freerotateright(Enj_HeapAllocatorData* h, heap_free *f){
-    heap_free *c = f->left;
+    heap_free *c = f->chs[0];
 
     if (f->parent) {
-
-        size_t memboff =
-            f->parent->left == f
-            ? offsetof(heap_free, left)
-            : offsetof(heap_free, right);
-
-        *(heap_free **)((char *)f->parent + memboff) = c;
+        f->parent->chs[f->parent->chs[1] == f] = c;
     }
     else h->root = c;
 
     c->parent = f->parent;
 
-    f->left = c->right;
-    if(c->right) c->right->parent = f;
+    f->chs[0] = c->chs[1];
+    if(c->chs[1]) c->chs[1]->parent = f;
 
     f->parent = c;
-    c->right = f;
+    c->chs[1] = f;
 }
 
 static heap_free * findbestfree(Enj_HeapAllocatorData *h, size_t size){
@@ -322,10 +304,10 @@ static heap_free * findbestfree(Enj_HeapAllocatorData *h, size_t size){
         }
         else if (space > size){
             best = it;
-            it = it->left;
+            it = it->chs[0];
         }
         else{
-            it = it->right;
+            it = it->chs[1];
         }
     }
 
@@ -339,7 +321,7 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
 
     heap_free *u;
 
-    if ((f == h->root) & (f->left == NULL) & (f->right == NULL)){
+    if ((f == h->root) & (f->chs[0] == NULL) & (f->chs[1] == NULL)){
         h->root = NULL;
 
         return;
@@ -349,21 +331,21 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
 
     placeholder.header.next_color = 0;
     placeholder.parent = NULL;
-    placeholder.left = NULL;
-    placeholder.right = NULL;
+    placeholder.chs[0] = NULL;
+    placeholder.chs[1] = NULL;
 
 
     /*Cases of how many children f has*/
     /*if either node being removed or replacement node red, end early*/
-    childmask = (f->left != NULL)<<1 | (f->right != NULL);
+    childmask = (f->chs[0] != NULL)<<1 | (f->chs[1] != NULL);
 
     /*No children*/
     switch(childmask){
     case 0:{
         if(f->header.next_color & 1){
             if(f->parent){
-                if(f == f->parent->left) f->parent->left = NULL;
-                else f->parent->right = NULL;
+                if(f == f->parent->chs[0]) f->parent->chs[0] = NULL;
+                else f->parent->chs[1] = NULL;
             }
 
             return;
@@ -373,8 +355,8 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
 
         placeholder.parent = f->parent;
         if(f->parent){
-            if(f == f->parent->left) f->parent->left = db;
-            else f->parent->right = db;
+            if(f == f->parent->chs[0]) f->parent->chs[0] = db;
+            else f->parent->chs[1] = db;
 
         }
 
@@ -383,20 +365,20 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
     break;
     /*Only right child*/
     case 1:{
-        int red = (f->header.next_color | f->right->header.next_color) & 1;
+        int red = (f->header.next_color | f->chs[1]->header.next_color) & 1;
 
-        db = f->right;
+        db = f->chs[1];
 
-        f->right->header.next_color &= ~1;
+        f->chs[1]->header.next_color &= ~1;
 
-        f->right->parent = f->parent;
+        f->chs[1]->parent = f->parent;
         if(f->parent){
-            if(f == f->parent->left) f->parent->left = f->right;
-            else f->parent->right = f->right;
+            if(f == f->parent->chs[0]) f->parent->chs[0] = f->chs[1];
+            else f->parent->chs[1] = f->chs[1];
         }
         else {
             /*change root*/
-            h->root = f->right;
+            h->root = f->chs[1];
         }
 
         if(red) return;
@@ -405,20 +387,20 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
     break;
     /*Only left child*/
     case 2:{
-        int red = (f->header.next_color | f->left->header.next_color) & 1;
+        int red = (f->header.next_color | f->chs[0]->header.next_color) & 1;
 
-        db = f->left;
+        db = f->chs[0];
 
-        f->left->header.next_color &= ~1;
+        f->chs[0]->header.next_color &= ~1;
 
-        f->left->parent = f->parent;
+        f->chs[0]->parent = f->parent;
         if(f->parent){
-            if(f == f->parent->left) f->parent->left = f->left;
-            else f->parent->right = f->left;
+            if(f == f->parent->chs[0]) f->parent->chs[0] = f->chs[0];
+            else f->parent->chs[1] = f->chs[0];
         }
         else {
             /*change root*/
-            h->root = f->left;
+            h->root = f->chs[0];
         }
 
         if(red) return;
@@ -432,14 +414,14 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
         heap_free* succright;
 
         /*Replace f with inorder successor*/
-        heap_free *it = f->right;
-        while(it->left){
-            it = it->left;
+        heap_free *it = f->chs[1];
+        while(it->chs[0]){
+            it = it->chs[0];
         }
         red_succ = it->header.next_color & 1;
 
         succparent = it->parent;
-        succright = it->right;
+        succright = it->chs[1];
 
         /*Make the it node new parent of f children*/
         it->header.next_color =
@@ -447,8 +429,8 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
 
         it->parent = f->parent;
         if(f->parent){
-            if(f == f->parent->left) f->parent->left = it;
-            else f->parent->right = it;
+            if(f == f->parent->chs[0]) f->parent->chs[0] = it;
+            else f->parent->chs[1] = it;
         }
         else {
             /*change root*/
@@ -456,17 +438,17 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
         }
 
 
-        f->left->parent = it;
-        it->left = f->left;
+        f->chs[0]->parent = it;
+        it->chs[0] = f->chs[0];
         /*Special case if successor is child of f node*/
-        if (f->right == it) {
+        if (f->chs[1] == it) {
             if (red_succ) {
                 /*Nothing to do, successor was originally red*/
                 return;
             }
 
-            if (it->right) {
-                db = it->right;
+            if (it->chs[1]) {
+                db = it->chs[1];
                 if (db->header.next_color & 1) {
                     db->header.next_color &= ~1;
 
@@ -477,17 +459,17 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
 
                 db = &placeholder;
                 placeholder.parent = it;
-                it->right = &placeholder;
+                it->chs[1] = &placeholder;
             }
         }
         else {
-            f->right->parent = it;
-            it->right = f->right;
+            f->chs[1]->parent = it;
+            it->chs[1] = f->chs[1];
 
             /*If right child exists, make that d-black, else the placeholder*/
             if (succright) {
                 succright->parent = succparent;
-                succparent->left = succright;
+                succparent->chs[0] = succright;
                 if (red_succ) {
                     return;
                 }
@@ -501,14 +483,14 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
             }
             else{
                 if(red_succ){
-                    succparent->left = NULL;
+                    succparent->chs[0] = NULL;
 
                     return;
                 }
 
                 db = &placeholder;
                 placeholder.parent = succparent;
-                succparent->left = &placeholder;
+                succparent->chs[0] = &placeholder;
             }
         }
 
@@ -529,19 +511,19 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
         /*C1*/
         if (!u->parent) break;
 
-        s = u == u->parent->right
-                    ? u->parent->left : u->parent->right;
+        s = u == u->parent->chs[1]
+                    ? u->parent->chs[0] : u->parent->chs[1];
         /*C2*/
         if (s->header.next_color & 1) {
             u->parent->header.next_color |= 1;
             s->header.next_color &= ~1;
-            if (u == u->parent->left) {
+            if (u == u->parent->chs[0]) {
                 freerotateleft(h, u->parent);
-                s = u->parent->right;
+                s = u->parent->chs[1];
             }
             else {
                 freerotateright(h, u->parent);
-                s = u->parent->left;
+                s = u->parent->chs[0];
             }
 
 
@@ -549,9 +531,9 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
 
         /*Check sibling children colors*/
         sleft_red
-            = s->left ? (s->left->header.next_color & 1) : 0;
+            = s->chs[0] ? (s->chs[0]->header.next_color & 1) : 0;
         sright_red
-            = s->right ? (s->right->header.next_color & 1) : 0;
+            = s->chs[1] ? (s->chs[1]->header.next_color & 1) : 0;
         /*C3*/
         if (!(u->parent->header.next_color & 1) & !(s->header.next_color & 1)
             & !sleft_red
@@ -575,21 +557,21 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
         }
         /*C5*/
         if (!(s->header.next_color & 1)) {
-            if ((u == u->parent->left)
+            if ((u == u->parent->chs[0])
                 & !sright_red
                 & sleft_red) {
                 s->header.next_color |= 1;
-                s->left->header.next_color &= ~1;
+                s->chs[0]->header.next_color &= ~1;
 
                 freerotateright(h, s);
 
                 s = s->parent;
             }
-            else if ((u == u->parent->right)
+            else if ((u == u->parent->chs[1])
                 & !sleft_red
                 & sright_red) {
                 s->header.next_color |= 1;
-                s->right->header.next_color &= ~1;
+                s->chs[1]->header.next_color &= ~1;
 
                 freerotateleft(h, s);
 
@@ -601,12 +583,12 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
             | (u->parent->header.next_color & 1);
         u->parent->header.next_color &= ~1;
 
-        if (u == u->parent->left) {
-            s->right->header.next_color &= ~1;
+        if (u == u->parent->chs[0]) {
+            s->chs[1]->header.next_color &= ~1;
             freerotateleft(h, u->parent);
         }
         else {
-            s->left->header.next_color &= ~1;
+            s->chs[0]->header.next_color &= ~1;
             freerotateright(h, u->parent);
         }
 
@@ -615,10 +597,10 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
 
 
     /*Delete placeholder*/
-    if (placeholder.parent && placeholder.parent->left == &placeholder)
-        placeholder.parent->left = NULL;
-    else if (placeholder.parent && placeholder.parent->right == &placeholder)
-        placeholder.parent->right = NULL;
+    if (placeholder.parent && placeholder.parent->chs[0] == &placeholder)
+        placeholder.parent->chs[0] = NULL;
+    else if (placeholder.parent && placeholder.parent->chs[1] == &placeholder)
+        placeholder.parent->chs[1] = NULL;
 
 
 
@@ -632,8 +614,8 @@ static void insertfree(Enj_HeapAllocatorData *h, heap_free *f){
         h->root = f;
         f->header.next_color &= ~1;
         f->parent = NULL;
-        f->left = NULL;
-        f->right = NULL;
+        f->chs[0] = NULL;
+        f->chs[1] = NULL;
         return;
     }
 
@@ -646,29 +628,29 @@ static void insertfree(Enj_HeapAllocatorData *h, heap_free *f){
             /*- ROUNDUP(sizeof(heap_header), ALIGN_SIZE)*/;
 
         if(space <= itspace){
-            if (it->left){
-                it = it->left;
+            if (it->chs[0]){
+                it = it->chs[0];
             }
             else{
-                it->left = f;
+                it->chs[0] = f;
                 f->parent = it;
                 break;
             }
         }
         else{
-            if (it->right){
-                it = it->right;
+            if (it->chs[1]){
+                it = it->chs[1];
             }
             else{
-                it->right = f;
+                it->chs[1] = f;
                 f->parent = it;
                 break;
             }
         }
     }
 
-    f->left = NULL;
-    f->right = NULL;
+    f->chs[0] = NULL;
+    f->chs[1] = NULL;
     f->header.next_color |= 1;
 
     /*Case 1 already handles by root and case 2*/
@@ -696,11 +678,11 @@ static void insertfree(Enj_HeapAllocatorData *h, heap_free *f){
                 /*Case 4*/
                 heap_free *p = f->parent;
                 heap_free *gp = f->parent->parent;
-                if((f == p->right) & (p == gp->left)){
+                if((f == p->chs[1]) & (p == gp->chs[0])){
                     freerotateleft(h, p);
                     f = p;
                 }
-                else if((f == p->left) & (p == gp->right)){
+                else if((f == p->chs[0]) & (p == gp->chs[1])){
                     freerotateright(h, p);
                     f = p;
                 }
@@ -708,7 +690,7 @@ static void insertfree(Enj_HeapAllocatorData *h, heap_free *f){
                 p = f->parent;
                 gp = f->parent->parent;
 
-                if(f == p->left){
+                if(f == p->chs[0]){
                     freerotateright(h, gp);
                 }
                 else{

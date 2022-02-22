@@ -100,7 +100,7 @@ endif ()
 
 if (MSVC)
     add_library(core ${CORE_SOURCE} ${CORE_SOURCE_RENDER})
-    add_executable (main
+    add_executable (main WIN32
         src/main.cpp
         )
 

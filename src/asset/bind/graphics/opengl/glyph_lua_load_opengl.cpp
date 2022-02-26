@@ -153,8 +153,7 @@ int Enj_Lua_GlyphOnPreload(lua_State *L){
         fr;
     //rotate 90 deg clockwise
     fr = frbits & 1<<2 ?
-        (~fr & (1<<0 | 1<<2 | 1<<4 | 1<<6))<<1
-            | (fr & (1<<1 | 1<<3 | 1<<5 | 1<<7))>>1 :
+        (fr & 3<<0)<<2 | (fr & 3<<2)<<4 | (fr & 3<<6)>>2 | (fr & 3<<4)>>4 :
         fr;
 
     e->fliprotate = fr;

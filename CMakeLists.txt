@@ -211,10 +211,6 @@ if (MSVC)
         install (DIRECTORY "${DATA_DIRECTORY}/" DESTINATION .)
     endif ()
 
-
-    target_compile_options(core PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/GS->)
-    target_compile_options(main PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/GS->)
-
 elseif (APPLE)
     string (JOIN " " CMAKE_XCODE_ATTRIBUTE_FRAMEWORK_SEARCH_PATHS
             "\"${CMAKE_SOURCE_DIR}/SDL2/lib/macos\""

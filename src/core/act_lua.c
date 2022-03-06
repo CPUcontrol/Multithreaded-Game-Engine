@@ -596,7 +596,12 @@ int Enj_Lua_StartThread(lua_State *L){
 
 int Enj_Lua_ScheduleThread(lua_State *L){
     int atype = lua_type(L, 1);
-    if((atype == LUA_TTHREAD) | (atype == LUA_TNUMBER)) {
+    if (
+        (atype == LUA_TTHREAD)
+    |   (atype == LUA_TNUMBER)
+    |   (atype == LUA_TNIL)
+    |   (atype == LUA_TNONE)) {
+
         lua_pushliteral(L, "bad arguments");
         return Enj_Lua_Error(L);
     }

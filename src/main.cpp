@@ -147,6 +147,15 @@ static int luasavepref(lua_State *L){
     return 0;
 }
 
+static int luasetlogfunction(lua_State *L){
+    lua_settop(L, 1);
+    if(!lua_isfunction(L, 1)){
+        lua_getglobal(L, "print");
+    }
+    lua_setfield(L, LUA_REGISTRYINDEX, "logfunction");
+    return 0;
+}
+
 #define APP_ENUM_BACKEND_SDL 0
 #define APP_ENUM_BACKEND_OPENGL 1
 
@@ -357,6 +366,10 @@ int main(int argc, char **argv){
     lua_pushstring(mdata.L, mdata.prefpath.generic_string().c_str());
     lua_pushcclosure(mdata.L, luasavepref, 1);
     lua_setglobal(mdata.L, "save_pref");
+
+    lua_getglobal(mdata.L, "print");
+    lua_setfield(mdata.L, LUA_REGISTRYINDEX, "logfunction");
+    lua_register(mdata.L, "set_logger", luasetlogfunction);
 
     initbuiltins(mdata.L);
 
@@ -981,6 +994,10 @@ int main(int argc, char **argv){
     lua_pushstring(mdata.L, mdata.prefpath.generic_string().c_str());
     lua_pushcclosure(mdata.L, luasavepref, 1);
     lua_setglobal(mdata.L, "save_pref");
+
+    lua_getglobal(mdata.L, "print");
+    lua_setfield(mdata.L, LUA_REGISTRYINDEX, "logfunction");
+    lua_register(mdata.L, "set_logger", luasetlogfunction);
 
     initbuiltins(mdata.L);
 

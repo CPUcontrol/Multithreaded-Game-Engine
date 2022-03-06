@@ -1,7 +1,5 @@
 #include "act_lua.h"
 
-#include <stdio.h>
-
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
@@ -411,7 +409,9 @@ void updateluaact(lua_State *L){
             case LUA_ERRERR:
             case LUA_ERRSYNTAX:
             case LUA_ERRFILE:
-                printf("%s\n", lua_tostring(nL, lua_gettop(nL)));
+                lua_getfield(nL, LUA_REGISTRYINDEX, "logfunction");
+                lua_pushvalue(nL, lua_gettop(nL) - 1);
+                lua_pcall(nL, 1, 0, 0);
             case LUA_OK:
                 //Thread was terminated abruptly
                 lua_pushvalue(L, 2);
@@ -437,7 +437,10 @@ void updateluaact(lua_State *L){
             case LUA_ERRERR:
             case LUA_ERRSYNTAX:
             case LUA_ERRFILE:
-                printf("%s\n", lua_tostring(nL, lua_gettop(nL)));
+                lua_getfield(nL, LUA_REGISTRYINDEX, "logfunction");
+                lua_pushvalue(nL, lua_gettop(nL) - 1);
+                lua_pcall(nL, 1, 0, 0);
+
                 lua_resetthread(nL);
             case LUA_OK:
                 lua_pushcfunction(L, &wakewaiters);

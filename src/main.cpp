@@ -149,9 +149,6 @@ static int luasavepref(lua_State *L){
 
 static int luasetlogfunction(lua_State *L){
     lua_settop(L, 1);
-    if(!lua_isfunction(L, 1)){
-        lua_getglobal(L, "print");
-    }
     lua_setfield(L, LUA_REGISTRYINDEX, "logfunction");
     return 0;
 }

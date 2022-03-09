@@ -153,6 +153,8 @@ static int luasetlogfunction(lua_State *L){
     return 0;
 }
 
+#define MAX_SPRITES (1<<14)
+
 #define APP_ENUM_BACKEND_SDL 0
 #define APP_ENUM_BACKEND_OPENGL 1
 
@@ -213,12 +215,6 @@ typedef struct maindata{
 
 } maindata;
 
-
-
-
-#define MAX_ASSETS (1<<12)
-
-#define MAX_SPRITES 1024
 
 
 int luadofilebasepath_cont(lua_State *L, int status, lua_KContext ctx);
@@ -838,12 +834,6 @@ typedef struct maindata{
 
 } maindata;
 
-
-
-
-#define MAX_ASSETS (1<<12)
-
-#define MAX_SPRITES 1024
 
 
 int luadofilebasepath_cont(lua_State *L, int status, lua_KContext ctx);

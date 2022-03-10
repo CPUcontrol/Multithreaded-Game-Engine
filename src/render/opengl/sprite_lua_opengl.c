@@ -4,7 +4,7 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-#include "render_opengl.h"
+#include "renderer_opengl.h"
 #include "sprite_opengl.h"
 #include "sprite_lua_opengl.h"
 

@@ -4,7 +4,7 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-#include "render_opengl.h"
+#include "renderer_opengl.h"
 #include "sprite_opengl.h"
 #include "primrect_opengl.h"
 #include "renderlist_opengl.h"
@@ -654,7 +654,7 @@ void bindrenderlist_OpenGL(
     Enj_Allocator *allocrendernode,
     Enj_Allocator *allocsprite,
     Enj_Allocator *allocprimrect
-    )
+)
 {
     lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
     lua_getfield(L, 1, "render");

@@ -2,7 +2,7 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-#include "render_opengl.h"
+#include "renderer_opengl.h"
 #include "primrect_opengl.h"
 #include "primrect_lua_opengl.h"
 

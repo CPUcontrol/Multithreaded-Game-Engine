@@ -708,15 +708,7 @@ int main(int argc, char **argv){
         updateluaact(mdata.L);
 
         if(!windowminimized){
-            glClear(GL_COLOR_BUFFER_BIT);
-
-            float idmat[4] = {1,0,0,1};
-            float idt[2] = {0,0};
-
-            Enj_RendererBegin_OpenGL(mdata.rend);
-            Enj_RenderList_OnRender_OpenGL(mdata.renderlist, mdata.rend, idmat, idt);
-            Enj_RendererFlush_OpenGL(mdata.rend);
-
+            Enj_RendererVisit_OpenGL(mdata.rend, mdata.renderlist);
             SDL_GL_SwapWindow(mdata.wind);
         }
 

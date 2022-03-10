@@ -1,6 +1,7 @@
+#include <math.h>
+#include <setjmp.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include <math.h>
 
 #include <GL/gl3w.h>
 
@@ -14,6 +15,8 @@
 #include "../../core/graphics/opengl/texture_opengl.h"
 
 #include "shadersource_opengl.h"
+
+#include "renderer_opengl.h"
 
 struct vertexsprite{
     GLfloat u_ul;
@@ -196,7 +199,7 @@ void Enj_FreeRenderer_OpenGL(Enj_Renderer_OpenGL *rend){
     free(rend);
 }
 
-void Enj_RendererBegin_OpenGL(Enj_Renderer_OpenGL *rend){
+static void Enj_RendererBegin_OpenGL(Enj_Renderer_OpenGL *rend){
     rend->curdraw = 0;
     rend->batchsize = 0;
 
@@ -250,7 +253,7 @@ static void flushrenderersprite(Enj_Renderer_OpenGL *rend);
 static void flushrendererrectfill(Enj_Renderer_OpenGL *rend);
 static void flushrendererrectline(Enj_Renderer_OpenGL *rend);
 
-void Enj_RendererFlush_OpenGL(Enj_Renderer_OpenGL *rend){
+static void Enj_RendererFlush_OpenGL(Enj_Renderer_OpenGL *rend){
     switch(rend->curdraw){
     case 0:
         break;
@@ -264,6 +267,24 @@ void Enj_RendererFlush_OpenGL(Enj_Renderer_OpenGL *rend){
         flushrendererrectline(rend);
         break;
     }
+}
+
+static const float idmat[4] = {1,0,0,1};
+static const float idt[2] = {0,0};
+
+void Enj_RendererVisit_OpenGL(
+    Enj_Renderer_OpenGL *rend,
+    Enj_RenderList_OpenGL *rl
+)
+{
+    //Restart rendering process if glUnmapBuffer fails
+    setjmp(rend->startenv);
+
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    Enj_RendererBegin_OpenGL(rend);
+    Enj_RenderList_OnRender_OpenGL(rl, rend, idmat, idt);
+    Enj_RendererFlush_OpenGL(rend);
 }
 
 static void flushrenderersprite(Enj_Renderer_OpenGL *rend){
@@ -281,14 +302,15 @@ static void flushrenderersprite(Enj_Renderer_OpenGL *rend){
     );
     GLboolean success_ibo = glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 
-    if (success_vbo & success_ibo)
-        glDrawElements(
+    if (!(success_vbo & success_ibo))
+        longjmp(rend->startenv, 0);
+
+    glDrawElements(
             GL_TRIANGLES,
             rend->batchsize * 6,
             GL_UNSIGNED_INT,
             (void *)rend->ibo_sprite_offset
-        );
-
+    );
     rend->vbo_sprite_offset += rend->batchsize
                                 * 4 * sizeof(struct vertexsprite);
     rend->ibo_sprite_offset += rend->batchsize
@@ -311,14 +333,15 @@ static void flushrendererrectfill(Enj_Renderer_OpenGL *rend){
     );
     GLboolean success_ibo = glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 
-    if (success_vbo & success_ibo)
-        glDrawElements(
+    if (!(success_vbo & success_ibo))
+        longjmp(rend->startenv, 0);
+
+    glDrawElements(
             GL_TRIANGLES,
             rend->batchsize * 6,
             GL_UNSIGNED_INT,
             (void *)rend->ibo_color_offset
-        );
-
+    );
     rend->vbo_color_offset += rend->batchsize
                             * 4 * sizeof(struct vertexcolor);
     rend->ibo_color_offset += rend->batchsize
@@ -341,14 +364,15 @@ static void flushrendererrectline(Enj_Renderer_OpenGL *rend){
     );
     GLboolean success_ibo = glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 
-    if (success_vbo & success_ibo)
-        glDrawElements(
+    if (!(success_vbo & success_ibo))
+        longjmp(rend->startenv, 0);
+
+    glDrawElements(
             GL_LINES,
             rend->batchsize * 8,
             GL_UNSIGNED_INT,
             (void *)rend->ibo_color_offset
-        );
-
+    );
     rend->vbo_color_offset += rend->batchsize
                             * 4 * sizeof(struct vertexcolor);
     rend->ibo_color_offset += rend->batchsize

@@ -6,7 +6,7 @@
 
 texture_binder_SDL::texture_binder_SDL(
         multi_dispatch &md,
-        std::filesystem::path &base,
+        std::string &base,
         SDL_Renderer *rend,
         lua_State *L
 ): dispatch(md), basepath(base), rend(rend), Lmain(L)

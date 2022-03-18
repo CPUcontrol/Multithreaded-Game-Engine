@@ -4,7 +4,7 @@
 typedef struct lua_State lua_State;
 
 typedef struct multi_dispatch multi_dispatch;
-#include <filesystem>
+#include <string>
 
 class texture_binder_OpenGL{
 private:
@@ -13,7 +13,7 @@ private:
 public:
     Enj_Allocator alloc;
     multi_dispatch &dispatch;
-    std::filesystem::path &basepath;
+    std::string &basepath;
 
     //Call those signals using the main lua state, instead of the
     //lua state belonging to a non-main thread passed to the C function
@@ -22,7 +22,7 @@ public:
 
     texture_binder_OpenGL(
         multi_dispatch &md,
-        std::filesystem::path &base,
+        std::string &base,
         lua_State *L
     );
     ~texture_binder_OpenGL();

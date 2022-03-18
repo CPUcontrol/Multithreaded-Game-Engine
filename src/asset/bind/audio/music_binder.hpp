@@ -4,7 +4,7 @@
 typedef struct lua_State lua_State;
 
 typedef struct multi_dispatch multi_dispatch;
-#include <filesystem>
+#include <string>
 
 class music_binder{
 private:
@@ -13,11 +13,11 @@ private:
 public:
     Enj_Allocator alloc;
     multi_dispatch &dispatch;
-    std::filesystem::path &basepath;
+    std::string &basepath;
 
     lua_State *Lmain;
 
-    music_binder(multi_dispatch &md, std::filesystem::path &base, lua_State *L);
+    music_binder(multi_dispatch &md, std::string &base, lua_State *L);
     ~music_binder();
 
     music_binder(const music_binder &o) = delete;

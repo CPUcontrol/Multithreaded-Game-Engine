@@ -3,7 +3,7 @@
 
 font_binder_SDL::font_binder_SDL(
         multi_dispatch &md,
-        std::filesystem::path &base,
+        std::string &base,
         SDL_Renderer *rend,
         lua_State *L,
         texture_binder_SDL &tb,

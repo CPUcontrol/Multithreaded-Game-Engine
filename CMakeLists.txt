@@ -278,8 +278,8 @@ elseif (APPLE)
 
 endif ()
 
-set_target_properties(core PROPERTIES CXX_STANDARD 17)
-set_target_properties(main PROPERTIES CXX_STANDARD 17)
+set_target_properties(core PROPERTIES CXX_STANDARD 14)
+set_target_properties(main PROPERTIES CXX_STANDARD 14)
 
 target_include_directories(core PRIVATE "${CMAKE_SOURCE_DIR}/SDL2/include")
 target_include_directories(core PRIVATE "${CMAKE_SOURCE_DIR}/SDL2_mixer/include")

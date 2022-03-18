@@ -1,6 +1,6 @@
 #include <condition_variable>
-#include <filesystem>
 #include <mutex>
+#include <string>
 
 #include <stdlib.h>
 
@@ -40,15 +40,15 @@ int Enj_Lua_TextureOnPreload(lua_State *L){
 
 
     {
-        std::lock_guard lock(ctx->dispatch.wq.mtx);
+        std::lock_guard<std::mutex> lock(ctx->dispatch.wq.mtx);
 
-        ctx->dispatch.wq.q.push([la, e, path = ctx->basepath.generic_string() + lua_tostring(L, 2), ctx](){
+        ctx->dispatch.wq.q.push([la, e, path = ctx->basepath + lua_tostring(L, 2), ctx](){
             Enj_PNGLoader png;
             Enj_Instream ifile;
 
             if(Enj_InitInstreamFromFile(&ifile, path.c_str())){
 
-                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, e, ctx](){
                     luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_FILE);
                     Enj_Free(&ctx->alloc, e);
@@ -59,7 +59,7 @@ int Enj_Lua_TextureOnPreload(lua_State *L){
             if(Enj_OpenPNG(&png, &ifile)){
                 Enj_FreeInstream(&ifile);
 
-                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, e, ctx](){
                     luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_FILE);
                     Enj_Free(&ctx->alloc, e);
@@ -72,7 +72,7 @@ int Enj_Lua_TextureOnPreload(lua_State *L){
                 Enj_ClosePNG(&png);
                 Enj_FreeInstream(&ifile);
 
-                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, e, ctx](){
                     luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_PARAM);
                     Enj_Free(&ctx->alloc, e);
@@ -87,7 +87,7 @@ int Enj_Lua_TextureOnPreload(lua_State *L){
                 Enj_ClosePNG(&png);
                 Enj_FreeInstream(&ifile);
 
-                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, e, ctx](){
                     luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_MEMORY);
                     Enj_Free(&ctx->alloc, e);
@@ -103,7 +103,7 @@ int Enj_Lua_TextureOnPreload(lua_State *L){
             Enj_FreeInstream(&ifile);
 
 
-            std::lock_guard lock(ctx->dispatch.mq.mtx);
+            std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
             ctx->dispatch.mq.q.push([la, e, imgbuf, ctx,
                 width, height]() {
 

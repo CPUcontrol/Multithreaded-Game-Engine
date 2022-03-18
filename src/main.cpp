@@ -2,7 +2,6 @@
 #include <string.h>
 
 #include <chrono>
-#include <filesystem>
 #include <string>
 #include <thread>
 #include <queue>
@@ -177,8 +176,8 @@ static int luasetlogfunction(lua_State *L){
 #include "asset/bind/graphics/opengl/font_binder_opengl.hpp"
 
 typedef struct maindata{
-    std::filesystem::path basepath;
-    std::filesystem::path prefpath;
+    std::string basepath;
+    std::string prefpath;
 
     lua_State *L;
 
@@ -269,11 +268,11 @@ int main(int argc, char **argv){
     SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
 
     char *cwd = SDL_GetBasePath();
-    mdata.basepath = std::filesystem::path(cwd);
+    mdata.basepath = std::string(cwd);
     SDL_free(cwd);
 
     char *prefd = SDL_GetPrefPath(APP_COMPANY, APP_NAME);
-    mdata.prefpath = std::filesystem::path(prefd);
+    mdata.prefpath = std::string(prefd);
     SDL_free(prefd);
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -321,9 +320,9 @@ int main(int argc, char **argv){
     //Set module search path
     lua_pushstring(mdata.L,
     (
-        (mdata.basepath/"modules"/"?.lua").generic_string()
+        (mdata.basepath + "modules/?.lua")
         + ';'
-        + (mdata.basepath/"modules"/"?.lc").generic_string()
+        + (mdata.basepath + "modules/?.lc")
     ).c_str());
     lua_setfield(mdata.L, 1, "path");
 
@@ -342,21 +341,21 @@ int main(int argc, char **argv){
 
     //Make dofile, loadfile work with base path
     lua_getglobal(mdata.L, "dofile");
-    lua_pushstring(mdata.L, mdata.basepath.generic_string().c_str());
+    lua_pushstring(mdata.L, mdata.basepath.c_str());
     lua_pushcclosure(mdata.L, luadofilebasepath, 2);
     lua_setglobal(mdata.L, "dofile");
 
     lua_getglobal(mdata.L, "loadfile");
-    lua_pushstring(mdata.L, mdata.basepath.generic_string().c_str());
+    lua_pushstring(mdata.L, mdata.basepath.c_str());
     lua_pushcclosure(mdata.L, lualoadfilebasepath, 2);
     lua_setglobal(mdata.L, "loadfile");
 
     //Pref file functions with pref path
-    lua_pushstring(mdata.L, mdata.prefpath.generic_string().c_str());
+    lua_pushstring(mdata.L, mdata.prefpath.c_str());
     lua_pushcclosure(mdata.L, lualoadpref, 1);
     lua_setglobal(mdata.L, "load_pref");
 
-    lua_pushstring(mdata.L, mdata.prefpath.generic_string().c_str());
+    lua_pushstring(mdata.L, mdata.prefpath.c_str());
     lua_pushcclosure(mdata.L, luasavepref, 1);
     lua_setglobal(mdata.L, "save_pref");
 
@@ -408,7 +407,7 @@ int main(int argc, char **argv){
     std::thread worker([&md, &workeractive](){
         while(true){
 
-            std::unique_lock lock(md.wq.mtx);
+            std::unique_lock<std::mutex> lock(md.wq.mtx);
 
             while(md.wq.q.empty() & workeractive)
                 md.cv.wait(lock);
@@ -476,7 +475,7 @@ int main(int argc, char **argv){
 
     //Start main lua script
     lua_pushcfunction(mdata.L, Enj_Lua_StartThread);
-    if(luaL_loadfile(mdata.L, (mdata.basepath/"main.lua").generic_string().c_str())){
+    if(luaL_loadfile(mdata.L, (mdata.basepath + "main.lua").c_str())){
         printf("%s\n", lua_tostring(mdata.L, 2));
         lua_settop(mdata.L, 0);
     }
@@ -714,7 +713,7 @@ int main(int argc, char **argv){
 
 
         do {
-            std::unique_lock lock(md.mq.mtx);
+            std::unique_lock<std::mutex> lock(md.mq.mtx);
             if(!md.mq.q.empty()){
                 std::function<void()> f(std::move(md.mq.q.front()));
                 md.mq.q.pop();
@@ -737,7 +736,7 @@ int main(int argc, char **argv){
 
 quit_app:
     {
-        std::lock_guard lock(md.wq.mtx);
+        std::lock_guard<std::mutex> lock(md.wq.mtx);
         workeractive = false;
     }
     md.cv.notify_one();
@@ -788,8 +787,8 @@ quit_app:
 #include "asset/bind/graphics/sdl/font_binder_sdl.hpp"
 
 typedef struct maindata{
-    std::filesystem::path basepath;
-    std::filesystem::path prefpath;
+    std::string basepath;
+    std::string prefpath;
 
     lua_State *L;
 
@@ -880,11 +879,11 @@ int main(int argc, char **argv){
     SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
 
     char *cwd = SDL_GetBasePath();
-    mdata.basepath = std::filesystem::path(cwd);
+    mdata.basepath = std::string(cwd);
     SDL_free(cwd);
 
     char *prefd = SDL_GetPrefPath(APP_COMPANY, APP_NAME);
-    mdata.prefpath = std::filesystem::path(prefd);
+    mdata.prefpath = std::string(prefd);
     SDL_free(prefd);
 
     mdata.wind = SDL_CreateWindow(
@@ -935,9 +934,9 @@ int main(int argc, char **argv){
     //Set module search path
     lua_pushstring(mdata.L,
     (
-        (mdata.basepath/"modules"/"?.lua").generic_string()
+        (mdata.basepath + "modules/?.lua")
         + ';'
-        + (mdata.basepath/"modules"/"?.lc").generic_string()
+        + (mdata.basepath + "modules/?.lc")
     ).c_str());
     lua_setfield(mdata.L, 1, "path");
 
@@ -956,21 +955,21 @@ int main(int argc, char **argv){
 
     //Make dofile, loadfile work with base path
     lua_getglobal(mdata.L, "dofile");
-    lua_pushstring(mdata.L, mdata.basepath.generic_string().c_str());
+    lua_pushstring(mdata.L, mdata.basepath.c_str());
     lua_pushcclosure(mdata.L, luadofilebasepath, 2);
     lua_setglobal(mdata.L, "dofile");
 
     lua_getglobal(mdata.L, "loadfile");
-    lua_pushstring(mdata.L, mdata.basepath.generic_string().c_str());
+    lua_pushstring(mdata.L, mdata.basepath.c_str());
     lua_pushcclosure(mdata.L, lualoadfilebasepath, 2);
     lua_setglobal(mdata.L, "loadfile");
 
     //Pref file functions with pref path
-    lua_pushstring(mdata.L, mdata.prefpath.generic_string().c_str());
+    lua_pushstring(mdata.L, mdata.prefpath.c_str());
     lua_pushcclosure(mdata.L, lualoadpref, 1);
     lua_setglobal(mdata.L, "load_pref");
 
-    lua_pushstring(mdata.L, mdata.prefpath.generic_string().c_str());
+    lua_pushstring(mdata.L, mdata.prefpath.c_str());
     lua_pushcclosure(mdata.L, luasavepref, 1);
     lua_setglobal(mdata.L, "save_pref");
 
@@ -1022,7 +1021,7 @@ int main(int argc, char **argv){
     std::thread worker([&md, &workeractive](){
         while(true){
 
-            std::unique_lock lock(md.wq.mtx);
+            std::unique_lock<std::mutex> lock(md.wq.mtx);
 
             while(md.wq.q.empty() & workeractive)
                 md.cv.wait(lock);
@@ -1090,7 +1089,7 @@ int main(int argc, char **argv){
 
     //Start main lua script
     lua_pushcfunction(mdata.L, Enj_Lua_StartThread);
-    if(luaL_loadfile(mdata.L, (mdata.basepath/"main.lua").generic_string().c_str())){
+    if(luaL_loadfile(mdata.L, (mdata.basepath + "main.lua").c_str())){
         printf("%s\n", lua_tostring(mdata.L, 2));
         lua_settop(mdata.L, 0);
     }
@@ -1336,7 +1335,7 @@ int main(int argc, char **argv){
 
 
         do {
-            std::unique_lock lock(md.mq.mtx);
+            std::unique_lock<std::mutex> lock(md.mq.mtx);
             if(!md.mq.q.empty()){
                 std::function<void()> f(std::move(md.mq.q.front()));
                 md.mq.q.pop();
@@ -1359,7 +1358,7 @@ int main(int argc, char **argv){
 
 quit_app:
     {
-        std::lock_guard lock(md.wq.mtx);
+        std::lock_guard<std::mutex> lock(md.wq.mtx);
         workeractive = false;
     }
     md.cv.notify_one();

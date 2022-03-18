@@ -1,6 +1,6 @@
 #include <condition_variable>
-#include <filesystem>
 #include <mutex>
+#include <string>
 
 #include <stdlib.h>
 
@@ -76,15 +76,15 @@ int Enj_Lua_FontOnPreload(lua_State *L){
     lua_setiuservalue(L, 1, 1);
 
     {
-        std::lock_guard lock(ctx->dispatch.wq.mtx);
+        std::lock_guard<std::mutex> lock(ctx->dispatch.wq.mtx);
 
         ctx->dispatch.wq.q.push(
-        [la, path = ctx->basepath.generic_string() + lua_tostring(L, 2), fsize, ctx](){
+        [la, path = ctx->basepath + lua_tostring(L, 2), fsize, ctx](){
 
             FT_Library ft;
             FT_Face face;
             if(FT_Init_FreeType(&ft)){
-                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
                     luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_LIBRARY);
                 });
@@ -94,7 +94,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
             if(FT_New_Face(ft, path.c_str(), 0, &face)){
                 FT_Done_FreeType(ft);
 
-                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
                     luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_FILE);
                 });
@@ -120,7 +120,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                 FT_Done_Face(face);
                 FT_Done_FreeType(ft);
 
-                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
                     luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_MEMORY);
                 });
@@ -132,7 +132,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                 FT_Done_Face(face);
                 FT_Done_FreeType(ft);
 
-                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
                     luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_MEMORY);
                 });
@@ -240,7 +240,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                 FT_Done_FreeType(ft);
                 free(glyphpairs);
 
-                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
                     luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_PARAM);
                 });
@@ -261,7 +261,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                 FT_Done_FreeType(ft);
                 free(glyphpairs);
 
-                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
                     luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_MEMORY);
                 });
@@ -284,7 +284,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                     FT_Done_FreeType(ft);
                     free(glyphpairs);
 
-                    std::lock_guard lock(ctx->dispatch.mq.mtx);
+                    std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
                     ctx->dispatch.mq.q.push([la, ctx](){
                         luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_MEMORY);
                     });
@@ -309,7 +309,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                 FT_Done_FreeType(ft);
                 free(glyphpairs);
 
-                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
                     luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_MEMORY);
                 });
@@ -349,7 +349,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
             FT_Done_Face(face);
             FT_Done_FreeType(ft);
 
-            std::lock_guard lock(ctx->dispatch.mq.mtx);
+            std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
             ctx->dispatch.mq.q.push([la, ctx, atlasarray, extrabuffers,
                 glyphpairs, dimpow, numchars, fontheight]() {
 

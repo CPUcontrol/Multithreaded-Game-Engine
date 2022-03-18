@@ -163,7 +163,7 @@ int Enj_Lua_GlyphOnPreload(lua_State *L){
     lua_setiuservalue(L, 1, 1);
 
     {
-        std::lock_guard lock(ctx->dispatch.mq.mtx);
+        std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
         ctx->dispatch.mq.q.push([la, Lmain = ctx->Lmain](){
             luafinishpreloadasset(Lmain, la, ASSET_OK);
         });

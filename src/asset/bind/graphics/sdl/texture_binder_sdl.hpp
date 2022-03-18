@@ -5,7 +5,7 @@ typedef struct SDL_Renderer SDL_Renderer;
 typedef struct lua_State lua_State;
 
 typedef struct multi_dispatch multi_dispatch;
-#include <filesystem>
+#include <string>
 
 class texture_binder_SDL{
 private:
@@ -14,7 +14,7 @@ private:
 public:
     Enj_Allocator alloc;
     multi_dispatch &dispatch;
-    std::filesystem::path &basepath;
+    std::string &basepath;
 
     SDL_Renderer *rend;
     //Call those signals using the main lua state, instead of the
@@ -24,7 +24,7 @@ public:
 
     texture_binder_SDL(
         multi_dispatch &md,
-        std::filesystem::path &base,
+        std::string &base,
         SDL_Renderer *rend,
         lua_State *L
     );

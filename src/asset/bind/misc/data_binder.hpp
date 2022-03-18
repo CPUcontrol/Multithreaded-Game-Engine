@@ -3,13 +3,13 @@
 typedef struct lua_State lua_State;
 
 typedef struct multi_dispatch multi_dispatch;
-#include <filesystem>
+#include <string>
 
 class data_binder{
 private:
 public:
     multi_dispatch &dispatch;
-    std::filesystem::path &basepath;
+    std::string &basepath;
 
     //Call those signals using the main lua state, instead of the
     //lua state belonging to a non-main thread passed to the C function
@@ -18,7 +18,7 @@ public:
 
     data_binder(
         multi_dispatch &md,
-        std::filesystem::path &base,
+        std::string &base,
         lua_State *L
     );
     ~data_binder();

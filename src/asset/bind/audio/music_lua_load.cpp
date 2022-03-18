@@ -1,6 +1,6 @@
 #include <condition_variable>
-#include <filesystem>
 #include <mutex>
+#include <string>
 
 #include <stdlib.h>
 
@@ -38,8 +38,8 @@ int Enj_Lua_MusicOnPreload(lua_State *L){
     }
 
     {
-        std::lock_guard lock(ctx->dispatch.mq.mtx);
-        ctx->dispatch.mq.q.push([la, e, path = ctx->basepath.generic_string() + lua_tostring(L, 2), ctx](){
+        std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
+        ctx->dispatch.mq.q.push([la, e, path = ctx->basepath + lua_tostring(L, 2), ctx](){
             e->music = Mix_LoadMUS(path.c_str());
             if(!e->music) {
                 luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_FILE);

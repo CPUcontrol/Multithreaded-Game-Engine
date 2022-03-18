@@ -1,6 +1,6 @@
 #include <condition_variable>
-#include <filesystem>
 #include <mutex>
+#include <string>
 
 #include <stdlib.h>
 
@@ -30,14 +30,14 @@ int Enj_Lua_DataOnPreload(lua_State *L){
     data_binder *ctx = (data_binder *)la->ctx;
 
     {
-        std::lock_guard lock(ctx->dispatch.wq.mtx);
+        std::lock_guard<std::mutex> lock(ctx->dispatch.wq.mtx);
 
-        ctx->dispatch.wq.q.push([la, path = ctx->basepath.generic_string() + lua_tostring(L, 2), ctx](){
+        ctx->dispatch.wq.q.push([la, path = ctx->basepath + lua_tostring(L, 2), ctx](){
             Enj_Instream ifile;
 
             if(Enj_InitInstreamFromFile(&ifile, path.c_str())){
 
-                std::lock_guard lock(ctx->dispatch.mq.mtx);
+                std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
                 ctx->dispatch.mq.q.push([la, ctx](){
                     luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_FILE);
                 });
@@ -55,7 +55,7 @@ int Enj_Lua_DataOnPreload(lua_State *L){
                     free(buffer);
                     Enj_FreeInstream(&ifile);
 
-                    std::lock_guard lock(ctx->dispatch.mq.mtx);
+                    std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
                     ctx->dispatch.mq.q.push([la, ctx](){
                         luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_MEMORY);
                     });
@@ -75,7 +75,7 @@ int Enj_Lua_DataOnPreload(lua_State *L){
                     free(buffer);
                     Enj_FreeInstream(&ifile);
 
-                    std::lock_guard lock(ctx->dispatch.mq.mtx);
+                    std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
                     ctx->dispatch.mq.q.push([la, ctx](){
                         luafinishpreloadasset(ctx->Lmain, la, ASSET_ERROR_PARAM);
                     });
@@ -89,7 +89,7 @@ int Enj_Lua_DataOnPreload(lua_State *L){
             Enj_FreeInstream(&ifile);
 
 
-            std::lock_guard lock(ctx->dispatch.mq.mtx);
+            std::lock_guard<std::mutex> lock(ctx->dispatch.mq.mtx);
             ctx->dispatch.mq.q.push([la, buffer, ctx, fsize]() {
                 lua_getfield(ctx->Lmain, LUA_REGISTRYINDEX, "assetweaktable");
                 lua_pushlightuserdata(ctx->Lmain, la->data);

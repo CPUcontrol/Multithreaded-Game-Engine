@@ -409,11 +409,14 @@ void updateluaact(lua_State *L){
             case LUA_ERRERR:
             case LUA_ERRSYNTAX:
             case LUA_ERRFILE:
-                if(lua_getfield(nL, LUA_REGISTRYINDEX, "logfunction")
+                if(lua_getfield(L, LUA_REGISTRYINDEX, "logfunction")
                     == LUA_TFUNCTION){
 
-                    lua_pushvalue(nL, lua_gettop(nL) - 1);
-                    lua_pcall(nL, 1, 0, 0);
+                    lua_xmove(nL, L, 1);
+                    if (lua_pcall(L, 1, 0, 0) != LUA_OK) lua_pop(L, 1);
+                }
+                else{
+                    lua_pop(L, 1);
                 }
             case LUA_OK:
                 //Thread was terminated abruptly
@@ -440,11 +443,14 @@ void updateluaact(lua_State *L){
             case LUA_ERRERR:
             case LUA_ERRSYNTAX:
             case LUA_ERRFILE:
-                if(lua_getfield(nL, LUA_REGISTRYINDEX, "logfunction")
+                if(lua_getfield(L, LUA_REGISTRYINDEX, "logfunction")
                     == LUA_TFUNCTION){
 
-                    lua_pushvalue(nL, lua_gettop(nL) - 1);
-                    lua_pcall(nL, 1, 0, 0);
+                    lua_xmove(nL, L, 1);
+                    if (lua_pcall(L, 1, 0, 0) != LUA_OK) lua_pop(L, 1);
+                }
+                else{
+                    lua_pop(L, 1);
                 }
 
                 lua_resetthread(nL);

@@ -152,6 +152,45 @@ static int luasetlogfunction(lua_State *L){
     return 0;
 }
 
+static int luadofilebasepath_cont(lua_State *L, int status, lua_KContext ctx);
+static int luadofilebasepath(lua_State *L){
+    lua_settop(L, 1);
+    lua_pushvalue(L, lua_upvalueindex(1));
+    lua_rotate(L, 1, 1);
+
+    if(lua_isstring(L, 2)){
+        lua_pushvalue(L, lua_upvalueindex(2));
+        lua_pushvalue(L, 2);
+        lua_concat(L, 2);
+        lua_copy(L, 3, 2);
+        lua_pop(L, 1);
+    }
+
+    lua_callk(L, 1, LUA_MULTRET, 0, luadofilebasepath_cont);
+    return luadofilebasepath_cont(L, LUA_OK, 0);
+}
+static int luadofilebasepath_cont(lua_State *L, int status, lua_KContext ctx){
+    return lua_gettop(L);
+}
+
+static int lualoadfilebasepath(lua_State *L){
+    lua_settop(L, 3);
+    lua_pushvalue(L, lua_upvalueindex(1));
+    lua_rotate(L, 1, 1);
+
+    if(lua_isstring(L, 2)){
+        lua_pushvalue(L, lua_upvalueindex(2));
+        lua_pushvalue(L, 2);
+        lua_concat(L, 2);
+        lua_copy(L, 5, 2);
+        lua_pop(L, 1);
+    }
+
+    lua_call(L, 3, LUA_MULTRET);
+    return lua_gettop(L);
+}
+
+
 #define MAX_SPRITES (1<<14)
 
 #define APP_ENUM_BACKEND_SDL 0
@@ -213,47 +252,6 @@ typedef struct maindata{
     Enj_RenderList_OpenGL *renderlist;
 
 } maindata;
-
-
-
-int luadofilebasepath_cont(lua_State *L, int status, lua_KContext ctx);
-int luadofilebasepath(lua_State *L){
-    lua_settop(L, 1);
-    lua_pushvalue(L, lua_upvalueindex(1));
-    lua_rotate(L, 1, 1);
-
-    if(lua_isstring(L, 2)){
-        lua_pushvalue(L, lua_upvalueindex(2));
-        lua_pushvalue(L, 2);
-        lua_concat(L, 2);
-        lua_copy(L, 3, 2);
-        lua_pop(L, 1);
-    }
-
-    lua_callk(L, 1, LUA_MULTRET, 0, luadofilebasepath_cont);
-    return luadofilebasepath_cont(L, LUA_OK, 0);
-}
-int luadofilebasepath_cont(lua_State *L, int status, lua_KContext ctx){
-    return lua_gettop(L);
-}
-
-int lualoadfilebasepath(lua_State *L){
-    lua_settop(L, 3);
-    lua_pushvalue(L, lua_upvalueindex(1));
-    lua_rotate(L, 1, 1);
-
-    if(lua_isstring(L, 2)){
-        lua_pushvalue(L, lua_upvalueindex(2));
-        lua_pushvalue(L, 2);
-        lua_concat(L, 2);
-        lua_copy(L, 5, 2);
-        lua_pop(L, 1);
-    }
-
-    lua_call(L, 3, LUA_MULTRET);
-    return lua_gettop(L);
-}
-
 
 
 int main(int argc, char **argv){
@@ -824,47 +822,6 @@ typedef struct maindata{
     Enj_RenderList_SDL *renderlist;
 
 } maindata;
-
-
-
-int luadofilebasepath_cont(lua_State *L, int status, lua_KContext ctx);
-int luadofilebasepath(lua_State *L){
-    lua_settop(L, 1);
-    lua_pushvalue(L, lua_upvalueindex(1));
-    lua_rotate(L, 1, 1);
-
-    if(lua_isstring(L, 2)){
-        lua_pushvalue(L, lua_upvalueindex(2));
-        lua_pushvalue(L, 2);
-        lua_concat(L, 2);
-        lua_copy(L, 3, 2);
-        lua_pop(L, 1);
-    }
-
-    lua_callk(L, 1, LUA_MULTRET, 0, luadofilebasepath_cont);
-    return luadofilebasepath_cont(L, LUA_OK, 0);
-}
-int luadofilebasepath_cont(lua_State *L, int status, lua_KContext ctx){
-    return lua_gettop(L);
-}
-
-int lualoadfilebasepath(lua_State *L){
-    lua_settop(L, 3);
-    lua_pushvalue(L, lua_upvalueindex(1));
-    lua_rotate(L, 1, 1);
-
-    if(lua_isstring(L, 2)){
-        lua_pushvalue(L, lua_upvalueindex(2));
-        lua_pushvalue(L, 2);
-        lua_concat(L, 2);
-        lua_copy(L, 5, 2);
-        lua_pop(L, 1);
-    }
-
-    lua_call(L, 3, LUA_MULTRET);
-    return lua_gettop(L);
-}
-
 
 
 int main(int argc, char **argv){

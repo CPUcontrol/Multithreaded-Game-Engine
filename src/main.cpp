@@ -80,6 +80,58 @@ static int luagetmousepressed(lua_State *L){
     return 1;
 }
 
+static int luagetfullscreen(lua_State *L){
+    SDL_Window *window = (SDL_Window *)lua_touserdata(L, lua_upvalueindex(1));
+    lua_pushboolean(L, SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN);
+
+    return 1;
+}
+
+static int luasetfullscreen(lua_State *L){
+    if(!lua_isboolean(L, 1)){
+        return 0;
+    }
+
+    SDL_Window *window = (SDL_Window *)lua_touserdata(L, lua_upvalueindex(1));
+    int fulltowindowed =
+        (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN != 0)
+        & !lua_toboolean(L, 1);
+    SDL_SetWindowFullscreen(
+        window,
+        lua_toboolean(L, 1) ? SDL_WINDOW_FULLSCREEN : 0
+    );
+
+    if (fulltowindowed)
+        SDL_SetWindowPosition(
+            window,
+            SDL_WINDOWPOS_CENTERED,
+            SDL_WINDOWPOS_CENTERED
+        );
+
+    return 0;
+}
+
+static int luagetresolution(lua_State *L){
+    SDL_Window *window = (SDL_Window *)lua_touserdata(L, lua_upvalueindex(1));
+    if(SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN){
+        SDL_DisplayMode mode;
+        SDL_GetWindowDisplayMode(window, &mode);
+
+        lua_pushinteger(L, mode.w);
+        lua_pushinteger(L, mode.h);
+    }
+    else{
+        int w;
+        int h;
+        SDL_GetWindowSize(window, &w, &h);
+
+        lua_pushinteger(L, w);
+        lua_pushinteger(L, h);
+    }
+
+    return 2;
+}
+
 static int luasetquit(lua_State *L){
     int *quit = (int *)lua_touserdata(L, lua_upvalueindex(1));
     *quit = 1;
@@ -215,6 +267,37 @@ static int lualoadfilebasepath(lua_State *L){
 #include "asset/bind/graphics/opengl/texture_binder_opengl.hpp"
 #include "asset/bind/graphics/opengl/glyph_binder_opengl.hpp"
 #include "asset/bind/graphics/opengl/font_binder_opengl.hpp"
+
+static int luasetresolution(lua_State *L){
+    if(!lua_isinteger(L, 1) | !lua_isinteger(L, 2)){
+        return 0;
+    }
+
+    SDL_Window *window = (SDL_Window *)lua_touserdata(L, lua_upvalueindex(1));
+
+    SDL_DisplayMode mode;
+    SDL_GetWindowDisplayMode(window, &mode);
+
+    int w = (int)lua_tointeger(L, 1);
+    int h = (int)lua_tointeger(L, 2);
+    mode.w = w;
+    mode.h = h;
+
+    SDL_SetWindowDisplayMode(window, &mode);
+
+    SDL_SetWindowSize(window, w, h);
+
+    Enj_Renderer_OpenGL *render =
+        (Enj_Renderer_OpenGL *)lua_touserdata(L, lua_upvalueindex(2));
+
+    Enj_RendererSetResolution_OpenGL(
+        render,
+        (unsigned int)w,
+        (unsigned int)h
+    );
+
+    return 0;
+}
 
 typedef struct maindata{
     std::string basepath;
@@ -362,6 +445,24 @@ int main(int argc, char **argv){
     lua_getglobal(mdata.L, "print");
     lua_setfield(mdata.L, LUA_REGISTRYINDEX, "logfunction");
     lua_register(mdata.L, "set_logger", luasetlogfunction);
+
+    //Fullscreen and resolution functions
+    lua_pushlightuserdata(mdata.L, mdata.wind);
+    lua_pushcclosure(mdata.L, luagetfullscreen, 1);
+    lua_setglobal(mdata.L, "get_fullscreen");
+
+    lua_pushlightuserdata(mdata.L, mdata.wind);
+    lua_pushcclosure(mdata.L, luasetfullscreen, 1);
+    lua_setglobal(mdata.L, "set_fullscreen");
+
+    lua_pushlightuserdata(mdata.L, mdata.wind);
+    lua_pushcclosure(mdata.L, luagetresolution, 1);
+    lua_setglobal(mdata.L, "get_resolution");
+
+    lua_pushlightuserdata(mdata.L, mdata.wind);
+    lua_pushlightuserdata(mdata.L, mdata.rend);
+    lua_pushcclosure(mdata.L, luasetresolution, 2);
+    lua_setglobal(mdata.L, "set_resolution");
 
     initbuiltins(mdata.L);
 
@@ -583,6 +684,28 @@ quit_app:
 #include "asset/bind/graphics/sdl/glyph_binder_sdl.hpp"
 #include "asset/bind/graphics/sdl/font_binder_sdl.hpp"
 
+static int luasetresolution(lua_State *L){
+    if(!lua_isinteger(L, 1) | !lua_isinteger(L, 2)){
+        return 0;
+    }
+
+    SDL_Window *window = (SDL_Window *)lua_touserdata(L, lua_upvalueindex(1));
+
+    SDL_DisplayMode mode;
+    SDL_GetWindowDisplayMode(window, &mode);
+
+    int w = (int)lua_tointeger(L, 1);
+    int h = (int)lua_tointeger(L, 2);
+    mode.w = w;
+    mode.h = h;
+
+    SDL_SetWindowDisplayMode(window, &mode);
+
+    SDL_SetWindowSize(window, w, h);
+
+    return 0;
+}
+
 typedef struct maindata{
     std::string basepath;
     std::string prefpath;
@@ -732,6 +855,23 @@ int main(int argc, char **argv){
     lua_getglobal(mdata.L, "print");
     lua_setfield(mdata.L, LUA_REGISTRYINDEX, "logfunction");
     lua_register(mdata.L, "set_logger", luasetlogfunction);
+
+    //Fullscreen and resolution functions
+    lua_pushlightuserdata(mdata.L, mdata.wind);
+    lua_pushcclosure(mdata.L, luagetfullscreen, 1);
+    lua_setglobal(mdata.L, "get_fullscreen");
+
+    lua_pushlightuserdata(mdata.L, mdata.wind);
+    lua_pushcclosure(mdata.L, luasetfullscreen, 1);
+    lua_setglobal(mdata.L, "set_fullscreen");
+
+    lua_pushlightuserdata(mdata.L, mdata.wind);
+    lua_pushcclosure(mdata.L, luagetresolution, 1);
+    lua_setglobal(mdata.L, "get_resolution");
+
+    lua_pushlightuserdata(mdata.L, mdata.wind);
+    lua_pushcclosure(mdata.L, luasetresolution, 1);
+    lua_setglobal(mdata.L, "set_resolution");
 
     initbuiltins(mdata.L);
 

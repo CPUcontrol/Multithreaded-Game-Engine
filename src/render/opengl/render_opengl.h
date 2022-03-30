@@ -15,6 +15,12 @@ void Enj_RendererVisit_OpenGL(
     Enj_RenderList_OpenGL *rl
 );
 
+void Enj_RendererSetResolution_OpenGL(
+    Enj_Renderer_OpenGL *rend,
+    unsigned int w,
+    unsigned int h
+);
+
 #ifdef __cplusplus
 }
 #endif

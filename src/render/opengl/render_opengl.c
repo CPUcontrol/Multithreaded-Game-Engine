@@ -57,34 +57,13 @@ Enj_Renderer_OpenGL * Enj_InitRenderer_OpenGL(){
 
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
-    GLfloat ortho[16] = {
-        2.f / viewport[2],
-        0.f,
-        0.f,
-        0.f,
 
-        0.f,
-        -2.f / viewport[3],
-        0.f,
-        0.f,
-
-        0.f,
-        0.f,
-        1.f,
-        0.f,
-
-        -1.f,
-        1.f,
-        0.f,
-        1.f
-    };
     glGenBuffers(1, &rend->ubo_transform);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, rend->ubo_transform);
-    glBufferData(
-        GL_UNIFORM_BUFFER,
-        16 * sizeof(GLfloat),
-        ortho,
-        GL_DYNAMIC_DRAW
+
+    Enj_RendererSetResolution_OpenGL(
+        rend,
+        (unsigned int)viewport[2],
+        (unsigned int)viewport[3]
     );
 
     glGenVertexArrays(1, &rend->vao_sprite);
@@ -197,6 +176,44 @@ void Enj_FreeRenderer_OpenGL(Enj_Renderer_OpenGL *rend){
     glDeleteProgram(rend->program_color);
 
     free(rend);
+}
+
+void Enj_RendererSetResolution_OpenGL(
+    Enj_Renderer_OpenGL *rend,
+    unsigned int w,
+    unsigned int h
+)
+{
+    GLfloat ortho[16] = {
+        2.f / w,
+        0.f,
+        0.f,
+        0.f,
+
+        0.f,
+        -2.f / h,
+        0.f,
+        0.f,
+
+        0.f,
+        0.f,
+        1.f,
+        0.f,
+
+        -1.f,
+        1.f,
+        0.f,
+        1.f
+    };
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, rend->ubo_transform);
+    glBufferData(
+        GL_UNIFORM_BUFFER,
+        16 * sizeof(GLfloat),
+        ortho,
+        GL_DYNAMIC_DRAW
+    );
+
+    glViewport(0, 0, w, h);
 }
 
 static void Enj_RendererBegin_OpenGL(Enj_Renderer_OpenGL *rend){

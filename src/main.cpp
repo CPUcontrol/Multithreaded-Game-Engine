@@ -94,7 +94,7 @@ static int luasetfullscreen(lua_State *L){
 
     SDL_Window *window = (SDL_Window *)lua_touserdata(L, lua_upvalueindex(1));
     int fulltowindowed =
-        (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN != 0)
+        ((SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) != 0)
         & !lua_toboolean(L, 1);
     SDL_SetWindowFullscreen(
         window,

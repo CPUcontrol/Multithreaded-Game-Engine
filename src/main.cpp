@@ -74,7 +74,7 @@ static int luagetmousecoords(lua_State *L){
 static int luagetmousepressed(lua_State *L){
     lua_pushboolean(
         L,
-        (SDL_GetMouseState(NULL, NULL) | SDL_BUTTON_LMASK) != 0
+        SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_LMASK
     );
 
     return 1;

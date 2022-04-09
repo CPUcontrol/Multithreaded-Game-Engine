@@ -169,7 +169,7 @@ void Enj_InitHeapAllocator(
 static void * bump_acate(size_t size, void *data){
     Enj_BumpAllocatorData *stack = (Enj_BumpAllocatorData *)data;
 
-    /*Round up added size - this works because ALIGN_SIZE is power of 2*/
+    /*Round up added size*/
     size_t roundupsize = (size + ALIGN_SIZE - 1) / ALIGN_SIZE * ALIGN_SIZE;
 
     void *res;
@@ -194,7 +194,7 @@ static void bump_decate(void *p, void *data){
 static void * stack_acate(size_t size, void *data){
     Enj_StackAllocatorData *stack = (Enj_StackAllocatorData *)data;
 
-    /*Round up added size - this works because ALIGN_SIZE is power of 2*/
+    /*Round up added size*/
     size_t roundupsize = (size + ALIGN_SIZE - 1) / ALIGN_SIZE * ALIGN_SIZE;
 
     void *res;
@@ -258,7 +258,7 @@ static heap_free * freeuncle(heap_free *f){
     return gp->chs[p == gp->chs[0]];
 }
 
-static void freerotateleft(Enj_HeapAllocatorData* h, heap_free *f){
+static void freerotateleft(Enj_HeapAllocatorData *h, heap_free *f){
     heap_free *c = f->chs[1];
 
     if (f->parent) {
@@ -275,7 +275,7 @@ static void freerotateleft(Enj_HeapAllocatorData* h, heap_free *f){
     c->chs[0] = f;
 }
 
-static void freerotateright(Enj_HeapAllocatorData* h, heap_free *f){
+static void freerotateright(Enj_HeapAllocatorData *h, heap_free *f){
     heap_free *c = f->chs[0];
 
     if (f->parent) {
@@ -410,8 +410,8 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
     /*Both children*/
     case 3:{
         int red_succ;
-        heap_free* succparent;
-        heap_free* succright;
+        heap_free *succparent;
+        heap_free *succright;
 
         /*Replace f with inorder successor*/
         heap_free *it = f->chs[1];
@@ -503,7 +503,7 @@ static void removefree(Enj_HeapAllocatorData *h, heap_free *f){
 
 
     for (;;) {
-        heap_free* s;
+        heap_free *s;
 
         unsigned char sleft_red;
         unsigned char sright_red;
@@ -620,12 +620,10 @@ static void insertfree(Enj_HeapAllocatorData *h, heap_free *f){
     }
 
     it = (heap_free *)h->root;
-    space = (f->header.next_color & ~1)
-        /*- ROUNDUP(sizeof(heap_header), ALIGN_SIZE)*/;
+    space = f->header.next_color & ~1;
 
     for(;;){
-        size_t itspace = (it->header.next_color & ~1)
-            /*- ROUNDUP(sizeof(heap_header), ALIGN_SIZE)*/;
+        size_t itspace = it->header.next_color & ~1;
 
         if(space <= itspace){
             if (it->chs[0]){

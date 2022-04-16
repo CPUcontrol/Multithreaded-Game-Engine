@@ -18,6 +18,7 @@ struct heap_free {
     heap_free* left;
     heap_free* right;
     heap_free* parent;
+    heap_free* duplist;
 };
 int validateheap(Enj_HeapAllocatorData *h) {
     heap_header* it = (heap_header*)h->start;
@@ -30,10 +31,71 @@ int validateheap(Enj_HeapAllocatorData *h) {
     }
     return 0;
 }
-static int countfree(heap_free* f) {
+static void printfree(heap_free *t, int depth){
+    if(t == NULL){
+    }
+    else{
+        int dup = 0;
+        heap_free *dl = t->duplist;
+        while(dl){
+            dl = dl->right;
+            dup++;
+        }
+        for(int i = 0; i < depth; i++){
+            printf(".");
+        }
+        printf("%d, with %d\n", (int)t->header.next_color&~1, dup);
+        printfree(t->left, depth+1);
+        printfree(t->right, depth+1);
+    }
+}
+static int countspace(heap_free* f) {
     if (!f) return 0;
 
-    return countfree(f->left) + countfree(f->right) + 1;
+    int dup = 0;
+    heap_free *dl = f->duplist;
+    while(dl){
+        dl = dl->right;
+        dup++;
+    }
+
+    int cfleft = countspace(f->left);
+    int cfright = countspace(f->right);
+
+    return (dup+1)*(f->header.next_color&~1) + cfleft + cfright;
+}
+int validatetreesize(Enj_HeapAllocatorData *h) {
+    return countspace((heap_free *)h->root);
+}
+static int helperbs(heap_free* f) {
+    if (!f) return 1;
+
+    int leftyes = f->left ? (f->left->header.next_color&~1) < (f->header.next_color&~1) : 1;
+    int rightyes = f->right ? (f->right->header.next_color&~1) > (f->header.next_color&~1) : 1;
+
+    return leftyes & rightyes & helperbs(f->left) & helperbs(f->right);
+}
+int validatetreebs(Enj_HeapAllocatorData *h) {
+    printf("checking tree bs\n");
+    if(helperbs((heap_free *)h->root))
+        printf("good tree\n");
+    else printf("NOT good tree\n");
+    return 0;
+}
+static int seekfree(heap_free *t, heap_free *target){
+    if(t == NULL){
+        return 0;
+    }
+    else if (t == target){
+        return 1;
+    }
+    else if (t->duplist){
+        for(heap_free *it = t->duplist; it; it = it->right){
+            if (it == target) return 2;
+        }
+    }
+
+    return seekfree(t->left, target) | seekfree(t->right, target);
 }
 int main(){
     srand((unsigned int)time(0));
@@ -184,11 +246,10 @@ int main(){
     time = dur.count();
 
     printf("Time free random: %u ns\n", (unsigned int)time);
-    validateheap(&heapdata);
+
     now = std::chrono::system_clock::now();
     for (int i = 0; i < 10000; i++){
         arr2[i] = Enj_Alloc(&heap, sizeof(int));
-        //*((unsigned int *)arr[i]) = rand();
     }
     end = std::chrono::system_clock::now();
     dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - now);
@@ -196,10 +257,8 @@ int main(){
 
     printf("Time Enj_Alloc heap: %u ns\n", (unsigned int)time);
 
-
     now = std::chrono::system_clock::now();
     for (int i = 0; i < 10000; i++){
-
         Enj_Free(&heap, arr2[perm2[i]]);
     }
     end = std::chrono::system_clock::now();
@@ -207,11 +266,9 @@ int main(){
     time = dur.count();
 
     printf("Time Enj_Free heap: %u ns\n", (unsigned int)time);
-    validateheap(&heapdata);
     now = std::chrono::system_clock::now();
     for (int i = 0; i < 10000; i++){
         arr2[i] = Enj_Alloc(&heap, sizeof(int));
-        //*((unsigned int *)arr[i]) = rand();
     }
     end = std::chrono::system_clock::now();
     dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - now);
@@ -219,10 +276,8 @@ int main(){
 
     printf("Time Enj_Alloc heap: %u ns\n", (unsigned int)time);
 
-
     now = std::chrono::system_clock::now();
     for (int i = 0; i < 10000; i++){
-
         Enj_Free(&heap, arr2[perm2[i]]);
     }
     end = std::chrono::system_clock::now();
@@ -230,8 +285,6 @@ int main(){
     time = dur.count();
 
     printf("Time Enj_Free heap: %u ns\n", (unsigned int)time);
-    validateheap(&heapdata);
-
 
     /**/
     now = std::chrono::system_clock::now();

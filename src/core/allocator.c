@@ -256,8 +256,8 @@ static void pool_decate(void *p, void *data){
 
 /*RB Tree and heap stuff*/
 
-static void freerotateleft(Enj_HeapAllocatorData *h, heap_free *f){
-    heap_free *c = f->chs[1];
+static void freerotate(Enj_HeapAllocatorData *h, heap_free *f, int dir){
+    heap_free *c = f->chs[1 ^ dir];
 
     if (f->parent) {
         f->parent->chs[f->parent->chs[1] == f] = c;
@@ -266,28 +266,11 @@ static void freerotateleft(Enj_HeapAllocatorData *h, heap_free *f){
 
     c->parent = f->parent;
 
-    f->chs[1] = c->chs[0];
-    if(c->chs[0]) c->chs[0]->parent = f;
+    f->chs[1 ^ dir] = c->chs[dir];
+    if(c->chs[dir]) c->chs[dir]->parent = f;
 
     f->parent = c;
-    c->chs[0] = f;
-}
-
-static void freerotateright(Enj_HeapAllocatorData *h, heap_free *f){
-    heap_free *c = f->chs[0];
-
-    if (f->parent) {
-        f->parent->chs[f->parent->chs[1] == f] = c;
-    }
-    else h->root = c;
-
-    c->parent = f->parent;
-
-    f->chs[0] = c->chs[1];
-    if(c->chs[1]) c->chs[1]->parent = f;
-
-    f->parent = c;
-    c->chs[1] = f;
+    c->chs[dir] = f;
 }
 
 static heap_free * findbestfree(Enj_HeapAllocatorData *h, size_t size){
@@ -470,28 +453,23 @@ static void removefree_tree(Enj_HeapAllocatorData *h, heap_free *f){
     for (;;) {
         heap_free *s;
 
-        unsigned char sleft_red;
-        unsigned char sright_red;
+        int sleft_red;
+        int sright_red;
+        int u_side;
 
         /*C2*/
         if (!u->parent) break;
 
-        s = u == u->parent->chs[1]
-                    ? u->parent->chs[0] : u->parent->chs[1];
+        u_side = (u == u->parent->chs[1]);
+        s = u->parent->chs[!u_side];
+
         /*C3*/
         if (s->header.next_color & 1) {
             u->parent->header.next_color |= 1;
             s->header.next_color &= ~1;
-            if (u == u->parent->chs[0]) {
-                freerotateleft(h, u->parent);
-                s = u->parent->chs[1];
-            }
-            else {
-                freerotateright(h, u->parent);
-                s = u->parent->chs[0];
-            }
 
-
+            freerotate(h, u->parent, u_side);
+            s = u->parent->chs[!u_side];
         }
 
         /*Check sibling children colors*/
@@ -522,23 +500,11 @@ static void removefree_tree(Enj_HeapAllocatorData *h, heap_free *f){
         }
         /*C5*/
         if (!(s->header.next_color & 1)) {
-            if ((u == u->parent->chs[0])
-                & !sright_red
-                & sleft_red) {
+            if ((u_side == sright_red) & (u_side != sleft_red)) {
                 s->header.next_color |= 1;
-                s->chs[0]->header.next_color &= ~1;
+                s->chs[u_side]->header.next_color &= ~1;
 
-                freerotateright(h, s);
-
-                s = s->parent;
-            }
-            else if ((u == u->parent->chs[1])
-                & !sleft_red
-                & sright_red) {
-                s->header.next_color |= 1;
-                s->chs[1]->header.next_color &= ~1;
-
-                freerotateleft(h, s);
+                freerotate(h, s, !u_side);
 
                 s = s->parent;
             }
@@ -548,14 +514,8 @@ static void removefree_tree(Enj_HeapAllocatorData *h, heap_free *f){
             | (u->parent->header.next_color & 1);
         u->parent->header.next_color &= ~1;
 
-        if (u == u->parent->chs[0]) {
-            s->chs[1]->header.next_color &= ~1;
-            freerotateleft(h, u->parent);
-        }
-        else {
-            s->chs[0]->header.next_color &= ~1;
-            freerotateright(h, u->parent);
-        }
+        s->chs[!u_side]->header.next_color &= ~1;
+        freerotate(h, u->parent, u_side);
 
         break;
     }
@@ -639,7 +599,7 @@ static void insertfree(Enj_HeapAllocatorData *h, heap_free *f){
             }
             else{
                 heap_free *gp = p->parent;
-                heap_free *u = gp->chs[p == gp->chs[0]];
+                heap_free *u = gp->chs[p != gp->chs[1]];
                 if(u && (u->header.next_color & 1)){
                     /*Case 2*/
                     p->header.next_color &= ~1;
@@ -650,24 +610,15 @@ static void insertfree(Enj_HeapAllocatorData *h, heap_free *f){
                 }
                 else{
                     /*Case 5 & 6*/
-                    if((f == p->chs[1]) & (p == gp->chs[0])){
-                        freerotateleft(h, p);
-                        f = p;
-                    }
-                    else if((f == p->chs[0]) & (p == gp->chs[1])){
-                        freerotateright(h, p);
+                    if((f == p->chs[1]) ^ (p == gp->chs[1])){
+                        freerotate(h, p, p == gp->chs[1]);
                         f = p;
                     }
 
                     p = f->parent;
                     gp = f->parent->parent;
 
-                    if(f == p->chs[0]){
-                        freerotateright(h, gp);
-                    }
-                    else{
-                        freerotateleft(h, gp);
-                    }
+                    freerotate(h, gp, f != p->chs[1]);
                     p->header.next_color &= ~1;
                     gp->header.next_color |= 1;
 

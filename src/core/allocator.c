@@ -67,7 +67,7 @@ void Enj_InitPoolAllocator(
     a->dealloc = &pool_decate;
     a->data = d;
 
-    /*chunksize at least 16 for pointer alignment*/
+    /*chunksize at least twice pointer size for pointer alignment*/
     align = chunksize <= 2*sizeof(void *) ?
         ROUND_PTR(chunksize) :
         chunksize;

@@ -623,13 +623,17 @@ int main(int argc, char **argv){
             }
             lock.unlock();
 
-            if(std::chrono::high_resolution_clock::now() - start
-            < std::chrono::duration<double>(1./60. - 0.002)){
+            if(
+                std::chrono::high_resolution_clock::now() - start
+                < std::chrono::duration<int, std::ratio<1, 60>>(1)
+                    - std::chrono::milliseconds(2)
+            )
+            {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
 
         }while(std::chrono::high_resolution_clock::now() - start
-        < std::chrono::duration<double>(1./60.));
+        < std::chrono::duration<int, std::ratio<1, 60>>(1));
     }
 
 quit_app:
@@ -1040,13 +1044,17 @@ int main(int argc, char **argv){
             }
             lock.unlock();
 
-            if(std::chrono::high_resolution_clock::now() - start
-            < std::chrono::duration<double>(1./60. - 0.002)){
+            if(
+                std::chrono::high_resolution_clock::now() - start
+                < std::chrono::duration<int, std::ratio<1, 60>>(1)
+                    - std::chrono::milliseconds(2)
+            )
+            {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
 
         }while(std::chrono::high_resolution_clock::now() - start
-        < std::chrono::duration<double>(1./60.));
+        < std::chrono::duration<int, std::ratio<1, 60>>(1));
     }
 
 quit_app:

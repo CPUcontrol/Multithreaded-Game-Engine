@@ -142,71 +142,71 @@ int main(){
 
     void *arr[100];
 
-    std::chrono::system_clock::time_point now;
-    std::chrono::system_clock::time_point end;
+    std::chrono::steady_clock::time_point now;
+    std::chrono::steady_clock::time_point end;
 
     std::chrono::nanoseconds dur;
     unsigned long long time;
-    now = std::chrono::system_clock::now();
+    now = std::chrono::steady_clock::now();
     for (int i = 0; i < 100; i++){
         arr[i] = malloc(16);
         //*((unsigned int *)arr[i]) = rand();
     }
-    end = std::chrono::system_clock::now();
+    end = std::chrono::steady_clock::now();
     dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - now);
     time = dur.count();
 
     printf("Time malloc: %u ns\n", (unsigned int)time);
 
-    now = std::chrono::system_clock::now();
+    now = std::chrono::steady_clock::now();
     for (int i = 0; i < 100; i++){
         free(arr[99-i]);
     }
-    end = std::chrono::system_clock::now();
+    end = std::chrono::steady_clock::now();
     dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - now);
     time = dur.count();
 
     printf("Time free: %u ns\n", (unsigned int)time);
 
 
-    now = std::chrono::system_clock::now();
+    now = std::chrono::steady_clock::now();
     for (int i = 0; i < 100; i++){
         arr[i] = Enj_Alloc(&stack, 16);
         //*((unsigned int *)arr[i]) = rand();
     }
-    end = std::chrono::system_clock::now();
+    end = std::chrono::steady_clock::now();
     dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - now);
     time = dur.count();
 
     printf("Time Enj_Alloc stack: %u ns\n", (unsigned int)time);
 
-    now = std::chrono::system_clock::now();
+    now = std::chrono::steady_clock::now();
     for (int i = 0; i < 100; i++){
         Enj_Free(&stack, arr[99-i]);
     }
-    end = std::chrono::system_clock::now();
+    end = std::chrono::steady_clock::now();
     dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - now);
     time = dur.count();
 
     printf("Time Enj_Free stack: %u ns\n", (unsigned int)time);
 
 
-    now = std::chrono::system_clock::now();
+    now = std::chrono::steady_clock::now();
     for (int i = 0; i < 100; i++){
         arr[i] = Enj_Alloc(&pool, sizeof(int));
         //*((unsigned int *)arr[i]) = rand();
     }
-    end = std::chrono::system_clock::now();
+    end = std::chrono::steady_clock::now();
     dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - now);
     time = dur.count();
 
     printf("Time Enj_Alloc pool: %u ns\n", (unsigned int)time);
 
-    now = std::chrono::system_clock::now();
+    now = std::chrono::steady_clock::now();
     for (int i = 0; i < 100; i++){
         Enj_Free(&pool, arr[99-i]);
     }
-    end = std::chrono::system_clock::now();
+    end = std::chrono::steady_clock::now();
     dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - now);
     time = dur.count();
 
@@ -227,67 +227,67 @@ int main(){
     for (int i = 0; i < 10000; i++){
         perm2[i] = 11*i % 10000;
     }
-    now = std::chrono::system_clock::now();
+    now = std::chrono::steady_clock::now();
     for (int i = 0; i < 10000; i++){
         arr2[i] = malloc(32);
     }
-    end = std::chrono::system_clock::now();
+    end = std::chrono::steady_clock::now();
     dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - now);
     time = dur.count();
 
     printf("Time malloc random: %u ns\n", (unsigned int)time);
 
-    now = std::chrono::system_clock::now();
+    now = std::chrono::steady_clock::now();
     for (int i = 0; i < 10000; i++){
         free(arr2[perm2[i]]);
     }
-    end = std::chrono::system_clock::now();
+    end = std::chrono::steady_clock::now();
     dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - now);
     time = dur.count();
 
     printf("Time free random: %u ns\n", (unsigned int)time);
 
-    now = std::chrono::system_clock::now();
+    now = std::chrono::steady_clock::now();
     for (int i = 0; i < 10000; i++){
         arr2[i] = Enj_Alloc(&heap, sizeof(int));
     }
-    end = std::chrono::system_clock::now();
+    end = std::chrono::steady_clock::now();
     dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - now);
     time = dur.count();
 
     printf("Time Enj_Alloc heap: %u ns\n", (unsigned int)time);
 
-    now = std::chrono::system_clock::now();
+    now = std::chrono::steady_clock::now();
     for (int i = 0; i < 10000; i++){
         Enj_Free(&heap, arr2[perm2[i]]);
     }
-    end = std::chrono::system_clock::now();
+    end = std::chrono::steady_clock::now();
     dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - now);
     time = dur.count();
 
     printf("Time Enj_Free heap: %u ns\n", (unsigned int)time);
-    now = std::chrono::system_clock::now();
+    now = std::chrono::steady_clock::now();
     for (int i = 0; i < 10000; i++){
         arr2[i] = Enj_Alloc(&heap, sizeof(int));
     }
-    end = std::chrono::system_clock::now();
+    end = std::chrono::steady_clock::now();
     dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - now);
     time = dur.count();
 
     printf("Time Enj_Alloc heap: %u ns\n", (unsigned int)time);
 
-    now = std::chrono::system_clock::now();
+    now = std::chrono::steady_clock::now();
     for (int i = 0; i < 10000; i++){
         Enj_Free(&heap, arr2[perm2[i]]);
     }
-    end = std::chrono::system_clock::now();
+    end = std::chrono::steady_clock::now();
     dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - now);
     time = dur.count();
 
     printf("Time Enj_Free heap: %u ns\n", (unsigned int)time);
 
     /**/
-    now = std::chrono::system_clock::now();
+    now = std::chrono::steady_clock::now();
     for (int k = 0; k < 1000; k++) {
 
         for (int i = 0; i < 100; i++) {
@@ -347,7 +347,7 @@ int main(){
 
         //if(k==0)validateheap(&heapdata);
     }
-    end = std::chrono::system_clock::now();
+    end = std::chrono::steady_clock::now();
     dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - now);
     time = dur.count();
     //validateheap(&heapdata);

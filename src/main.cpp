@@ -344,7 +344,7 @@ int main(int argc, char **argv){
 
     maindata mdata;
     int isquit = 0;
-    std::chrono::high_resolution_clock::time_point start;
+    std::chrono::steady_clock::time_point start;
 
     SDL_Init(SDL_INIT_EVERYTHING);
 
@@ -597,7 +597,7 @@ int main(int argc, char **argv){
 
 
     while(!isquit){
-        start = std::chrono::high_resolution_clock::now();
+        start = std::chrono::steady_clock::now();
 
         if(Enj_HandleInput(&input, &mdata.buttons, &mdata.keyboards))
             goto quit_app;
@@ -624,7 +624,7 @@ int main(int argc, char **argv){
             lock.unlock();
 
             if(
-                std::chrono::high_resolution_clock::now() - start
+                std::chrono::steady_clock::now() - start
                 < std::chrono::duration<int, std::ratio<1, 60>>(1)
                     - std::chrono::milliseconds(2)
             )
@@ -632,7 +632,7 @@ int main(int argc, char **argv){
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
 
-        }while(std::chrono::high_resolution_clock::now() - start
+        }while(std::chrono::steady_clock::now() - start
         < std::chrono::duration<int, std::ratio<1, 60>>(1));
     }
 
@@ -755,7 +755,7 @@ int main(int argc, char **argv){
 
     maindata mdata;
     int isquit = 0;
-    std::chrono::high_resolution_clock::time_point start;
+    std::chrono::steady_clock::time_point start;
 
     SDL_Init(SDL_INIT_EVERYTHING);
 
@@ -1010,7 +1010,7 @@ int main(int argc, char **argv){
 
 
     while(!isquit){
-        start = std::chrono::high_resolution_clock::now();
+        start = std::chrono::steady_clock::now();
 
         if(Enj_HandleInput(&input, &mdata.buttons, &mdata.keyboards))
             goto quit_app;
@@ -1045,7 +1045,7 @@ int main(int argc, char **argv){
             lock.unlock();
 
             if(
-                std::chrono::high_resolution_clock::now() - start
+                std::chrono::steady_clock::now() - start
                 < std::chrono::duration<int, std::ratio<1, 60>>(1)
                     - std::chrono::milliseconds(2)
             )
@@ -1053,7 +1053,7 @@ int main(int argc, char **argv){
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
 
-        }while(std::chrono::high_resolution_clock::now() - start
+        }while(std::chrono::steady_clock::now() - start
         < std::chrono::duration<int, std::ratio<1, 60>>(1));
     }
 

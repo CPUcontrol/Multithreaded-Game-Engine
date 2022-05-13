@@ -1,4 +1,6 @@
 cmake_minimum_required (VERSION 3.21.1)
+set (CMAKE_OSX_DEPLOYMENT_TARGET 10.13 CACHE STRING "")
+set (CMAKE_OSX_ARCHITECTURES "$(ARCHS_STANDARD)" CACHE STRING "")
 project (sdlapp)
 
 set (APP_NAME "Untitled" CACHE PATH "Name of app")
@@ -221,7 +223,6 @@ elseif (APPLE)
             "\"${CMAKE_SOURCE_DIR}/libpng/lib/macos\""
             "\"${CMAKE_SOURCE_DIR}/freetype/lib/macos\""
     )
-    set (CMAKE_OSX_ARCHITECTURES "$(ARCHS_STANDARD)")
 
     if (DATA_DIRECTORY)
         file (GLOB RESOURCE_FILES CONFIGURE_DEPENDS "${DATA_DIRECTORY}/*")

@@ -267,7 +267,6 @@ elseif (APPLE)
 
         RESOURCE "${RESOURCE_FILES}"
     )
-    target_compile_definitions (core PUBLIC HAVE_LIBC)
 
     find_package (ZLIB REQUIRED)
 

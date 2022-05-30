@@ -478,9 +478,9 @@ static void removefree_tree(Enj_HeapAllocatorData *h, heap_free *f){
         sright_red
             = s->chs[1] ? (s->chs[1]->header.next_color & 1) : 0;
         /*C1*/
-        if (!(u->parent->header.next_color & 1) & !(s->header.next_color & 1)
-            & !sleft_red
-            & !sright_red) {
+        if ((~u->parent->header.next_color & 1) & (~s->header.next_color & 1)
+            & (1^sleft_red)
+            & (1^sright_red)) {
 
             s->header.next_color |= 1;
             u = u->parent;
@@ -489,9 +489,9 @@ static void removefree_tree(Enj_HeapAllocatorData *h, heap_free *f){
             continue;
         }
         /*C4*/
-        if ((u->parent->header.next_color & 1) & !(s->header.next_color & 1)
-            & !sleft_red
-            & !sright_red) {
+        if ((u->parent->header.next_color & 1) & (~s->header.next_color & 1)
+            & (1^sleft_red)
+            & (1^sright_red)) {
 
             s->header.next_color |= 1;
             u->parent->header.next_color &= ~1;
@@ -499,8 +499,8 @@ static void removefree_tree(Enj_HeapAllocatorData *h, heap_free *f){
             break;
         }
         /*C5*/
-        if (!(s->header.next_color & 1)) {
-            if ((u_side == sright_red) & (u_side != sleft_red)) {
+        if ((~s->header.next_color & 1)) {
+            if ((!u_side ^ sright_red) & (u_side ^ sleft_red)) {
                 s->header.next_color |= 1;
                 s->chs[u_side]->header.next_color &= ~1;
 
@@ -585,7 +585,7 @@ static void insertfree(Enj_HeapAllocatorData *h, heap_free *f){
             f->header.next_color &= ~1;
             break;
         }
-        else if(!(f->parent->header.next_color & 1)){
+        else if((~f->parent->header.next_color & 1)){
             /*Case 1*/
             break;
         }

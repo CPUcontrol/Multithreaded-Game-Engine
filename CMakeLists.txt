@@ -8,7 +8,7 @@ set (APP_COMPANY "Cycloid" CACHE PATH "Name of app company")
 
 set (DATA_DIRECTORY "" CACHE PATH "Path to directory containing data for the app")
 set (APP_RENDER_BACKEND "opengl" CACHE STRING "Backend for the app")
-set_property(CACHE APP_RENDER_BACKEND PROPERTY STRINGS "sdl;opengl")
+set_property(CACHE APP_RENDER_BACKEND PROPERTY STRINGS "opengl")
 add_compile_definitions(
     "APP_NAME=\"${APP_NAME}\""
     "APP_COMPANY=\"${APP_COMPANY}\""
@@ -78,27 +78,6 @@ if (APP_RENDER_BACKEND STREQUAL "opengl")
         src/render/opengl/primrect_opengl.c
         src/render/opengl/primrect_lua_opengl.c
         src/render/opengl/render_opengl.c
-    )
-else()
-    set (CORE_SOURCE_RENDER
-        src/asset/graphics/sdl/texture_lua_sdl.c
-        src/asset/graphics/sdl/glyph_lua_sdl.c
-
-        src/asset/bind/graphics/sdl/texture_binder_sdl.cpp
-        src/asset/bind/graphics/sdl/texture_lua_load_sdl.cpp
-        src/asset/bind/graphics/sdl/glyph_binder_sdl.cpp
-        src/asset/bind/graphics/sdl/glyph_lua_load_sdl.cpp
-        src/asset/bind/graphics/sdl/font_binder_sdl.cpp
-        src/asset/bind/graphics/sdl/font_lua_load_sdl.cpp
-
-        src/render/sdl/lua_extra_render_sdl.c
-        src/render/sdl/renderlist_sdl.c
-        src/render/sdl/renderlist_lua_sdl.c
-        src/render/sdl/sprite_sdl.c
-        src/render/sdl/sprite_lua_sdl.c
-        src/render/sdl/primrect_sdl.c
-        src/render/sdl/primrect_lua_sdl.c
-        src/render/sdl/render_sdl.c
     )
 endif ()
 

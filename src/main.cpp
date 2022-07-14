@@ -600,7 +600,7 @@ int main(int argc, char **argv){
         start = std::chrono::steady_clock::now();
 
         if(Enj_HandleInput(&input, &mdata.buttons, &mdata.keyboards))
-            goto quit_app;
+            break;
 
         updateluaact(mdata.L);
 
@@ -636,7 +636,6 @@ int main(int argc, char **argv){
         < std::chrono::duration<int, std::ratio<1, 60>>(1));
     }
 
-quit_app:
     {
         std::lock_guard<std::mutex> lock(md.wq.mtx);
         workeractive = false;
@@ -1013,7 +1012,7 @@ int main(int argc, char **argv){
         start = std::chrono::steady_clock::now();
 
         if(Enj_HandleInput(&input, &mdata.buttons, &mdata.keyboards))
-            goto quit_app;
+            break;
 
         updateluaact(mdata.L);
 
@@ -1057,7 +1056,6 @@ int main(int argc, char **argv){
         < std::chrono::duration<int, std::ratio<1, 60>>(1));
     }
 
-quit_app:
     {
         std::lock_guard<std::mutex> lock(md.wq.mtx);
         workeractive = false;

@@ -17,9 +17,9 @@
 #include "../../../luaasset.h"
 
 #include "glyph_binder_opengl.hpp"
-#include "../../glyph_lua_load.h"
+#include "glyph_lua_load_opengl.h"
 
-int Enj_Lua_GlyphOnPreload(lua_State *L){
+int Enj_Lua_GlyphOnPreload_OpenGL(lua_State *L){
     int tmpidx = lua_gettop(L);
 
     lua_getfield(L, LUA_REGISTRYINDEX, "gameproto");
@@ -173,7 +173,7 @@ int Enj_Lua_GlyphOnPreload(lua_State *L){
     lua_pushvalue(L, 1);
     return 1;
 }
-int Enj_Lua_GlyphOnUnload(lua_State *L){
+int Enj_Lua_GlyphOnUnload_OpenGL(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
     Enj_Glyph_OpenGL *e = (Enj_Glyph_OpenGL *)la->data;
     glyph_binder_OpenGL *ctx = (glyph_binder_OpenGL *)la->ctx;
@@ -188,7 +188,7 @@ int Enj_Lua_GlyphOnUnload(lua_State *L){
     Enj_Free(&ctx->alloc, e);
     return 0;
 }
-int Enj_Lua_GlyphOnCanUnload(lua_State *L){
+int Enj_Lua_GlyphOnCanUnload_OpenGL(lua_State *L){
     lua_pushboolean(L, 1);
     return 1;
 }

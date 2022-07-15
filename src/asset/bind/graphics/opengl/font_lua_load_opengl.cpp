@@ -18,12 +18,12 @@
 #include "../../../luaasset.h"
 #include "../../../graphics/luafont.h"
 #include "font_binder_opengl.hpp"
-#include "../../font_lua_load.h"
+#include "font_lua_load_opengl.h"
 
 #include "texture_binder_opengl.hpp"
-#include "../../texture_lua_load.h"
+#include "texture_lua_load_opengl.h"
 #include "glyph_binder_opengl.hpp"
-#include "../../glyph_lua_load.h"
+#include "glyph_lua_load_opengl.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -49,7 +49,7 @@ static int luagetnullchar(lua_State *L){
     return 1;
 }
 
-int Enj_Lua_FontOnPreload(lua_State *L){
+int Enj_Lua_FontOnPreload_OpenGL(lua_State *L){
     if(!lua_isstring(L, 2)) {
         lua_pushnil(L);
         lua_pushinteger(L, ASSET_ERROR_BADARGS);
@@ -460,8 +460,8 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                     la_texture->data = texarray[i];
                     la_texture->refcount = 1;
                     la_texture->flag = 5;
-                    la_texture->onunload = Enj_Lua_TextureOnUnload;
-                    la_texture->oncanunload = Enj_Lua_TextureOnCanUnload;
+                    la_texture->onunload = Enj_Lua_TextureOnUnload_OpenGL;
+                    la_texture->oncanunload = Enj_Lua_TextureOnCanUnload_OpenGL;
                     lua_getfield(ctx->Lmain, 3, "texture");
                     lua_setmetatable(ctx->Lmain, 6);
 
@@ -492,8 +492,8 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                     la_glyph->data = glyphpairs[i].glyph;
                     la_glyph->refcount = 1;
                     la_glyph->flag = 5;
-                    la_glyph->onunload = Enj_Lua_GlyphOnUnload;
-                    la_glyph->oncanunload = Enj_Lua_GlyphOnCanUnload;
+                    la_glyph->onunload = Enj_Lua_GlyphOnUnload_OpenGL;
+                    la_glyph->oncanunload = Enj_Lua_GlyphOnCanUnload_OpenGL;
                     lua_getfield(ctx->Lmain, 3, "glyph");
                     lua_setmetatable(ctx->Lmain, 7);
                     lua_getiuservalue(ctx->Lmain, 4, 2);
@@ -523,8 +523,8 @@ int Enj_Lua_FontOnPreload(lua_State *L){
                     la_glyph->data = glyphpairs[numchars].glyph;
                     la_glyph->refcount = 1;
                     la_glyph->flag = 5;
-                    la_glyph->onunload = Enj_Lua_GlyphOnUnload;
-                    la_glyph->oncanunload = Enj_Lua_GlyphOnCanUnload;
+                    la_glyph->onunload = Enj_Lua_GlyphOnUnload_OpenGL;
+                    la_glyph->oncanunload = Enj_Lua_GlyphOnCanUnload_OpenGL;
                     lua_getfield(ctx->Lmain, 3, "glyph");
                     lua_setmetatable(ctx->Lmain, 7);
                     lua_getiuservalue(ctx->Lmain, 4, 2);
@@ -567,7 +567,7 @@ int Enj_Lua_FontOnPreload(lua_State *L){
     lua_pushvalue(L, 1);
     return 1;
 }
-int Enj_Lua_FontOnUnload(lua_State *L){
+int Enj_Lua_FontOnUnload_OpenGL(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
     //Free all glyphs
@@ -579,7 +579,7 @@ int Enj_Lua_FontOnUnload(lua_State *L){
         luaasset *la_glyph = (luaasset *)lua_touserdata(L, 5);
 
         la_glyph->refcount = 0;
-        lua_pushcfunction(L, Enj_Lua_GlyphOnUnload);
+        lua_pushcfunction(L, Enj_Lua_GlyphOnUnload_OpenGL);
         lua_pushvalue(L, 5);
         lua_call(L, 1, 0);
         la_glyph->data = NULL;
@@ -593,7 +593,7 @@ int Enj_Lua_FontOnUnload(lua_State *L){
     lua_getiuservalue(L, 1, 2);
     lua_pushnil(L);
     while(lua_next(L, 3) != 0){
-        lua_pushcfunction(L, Enj_Lua_TextureOnUnload);
+        lua_pushcfunction(L, Enj_Lua_TextureOnUnload_OpenGL);
         lua_pushvalue(L, 5);
         luaasset *la_texture = (luaasset *)lua_touserdata(L, 5);
         la_texture->refcount = 0;
@@ -606,14 +606,14 @@ int Enj_Lua_FontOnUnload(lua_State *L){
 
     return 0;
 }
-int Enj_Lua_FontOnCanUnload(lua_State *L){
+int Enj_Lua_FontOnCanUnload_OpenGL(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
 
     //Check all textures
     lua_getiuservalue(L, 1, 2);
     lua_pushnil(L);
     while(lua_next(L, 2) != 0){
-        lua_pushcfunction(L, Enj_Lua_TextureOnCanUnload);
+        lua_pushcfunction(L, Enj_Lua_TextureOnCanUnload_OpenGL);
         lua_pushvalue(L, 2);
         luaasset *la_texture = (luaasset *)lua_touserdata(L, 4);
         if(la_texture->refcount > 1){
@@ -640,7 +640,7 @@ int Enj_Lua_FontOnCanUnload(lua_State *L){
             return 1;
         }
 
-        lua_pushcfunction(L, Enj_Lua_GlyphOnCanUnload);
+        lua_pushcfunction(L, Enj_Lua_GlyphOnCanUnload_OpenGL);
         lua_pushvalue(L, 6);
         lua_call(L, 1, 1);
         if(!lua_toboolean(L, 7)){

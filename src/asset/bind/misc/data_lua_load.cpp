@@ -16,7 +16,7 @@
 #include "../../luaasset.h"
 
 #include "data_binder.hpp"
-#include "../data_lua_load.h"
+#include "data_lua_load.h"
 
 int Enj_Lua_DataOnPreload(lua_State *L){
     if(!lua_isstring(L, 2))  {

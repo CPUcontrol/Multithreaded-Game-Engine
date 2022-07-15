@@ -19,9 +19,9 @@
 #include "../../../luaasset.h"
 
 #include "texture_binder_opengl.hpp"
-#include "../../texture_lua_load.h"
+#include "texture_lua_load_opengl.h"
 
-int Enj_Lua_TextureOnPreload(lua_State *L){
+int Enj_Lua_TextureOnPreload_OpenGL(lua_State *L){
     if (!lua_isstring(L, 2)) {
         lua_pushnil(L);
         lua_pushinteger(L, ASSET_ERROR_BADARGS);
@@ -133,7 +133,7 @@ int Enj_Lua_TextureOnPreload(lua_State *L){
     lua_pushvalue(L, 1);
     return 1;
 }
-int Enj_Lua_TextureOnUnload(lua_State *L){
+int Enj_Lua_TextureOnUnload_OpenGL(lua_State *L){
     luaasset *la = (luaasset *)lua_touserdata(L, 1);
     Enj_Texture_OpenGL *e = (Enj_Texture_OpenGL *)la->data;
     texture_binder_OpenGL *ctx = (texture_binder_OpenGL *)la->ctx;
@@ -142,7 +142,7 @@ int Enj_Lua_TextureOnUnload(lua_State *L){
     Enj_Free(&ctx->alloc, e);
     return 0;
 }
-int Enj_Lua_TextureOnCanUnload(lua_State *L){
+int Enj_Lua_TextureOnCanUnload_OpenGL(lua_State *L){
     lua_pushboolean(L, 1);
     return 1;
 }

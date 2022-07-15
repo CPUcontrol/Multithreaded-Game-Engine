@@ -18,7 +18,7 @@
 #include "../../luaasset.h"
 
 #include "music_binder.hpp"
-#include "../music_lua_load.h"
+#include "music_lua_load.h"
 
 int Enj_Lua_MusicOnPreload(lua_State *L){
     if(!lua_isstring(L, 2)) {

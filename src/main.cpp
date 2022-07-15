@@ -37,12 +37,9 @@
 #include "asset/audio/music_lua.h"
 #include "asset/graphics/font_lua.h"
 #include "asset/misc/data_lua.h"
-#include "asset/bind/texture_lua_load.h"
-#include "asset/bind/glyph_lua_load.h"
-#include "asset/bind/font_lua_load.h"
-#include "asset/bind/sound_lua_load.h"
-#include "asset/bind/music_lua_load.h"
-#include "asset/bind/data_lua_load.h"
+#include "asset/bind/audio/sound_lua_load.h"
+#include "asset/bind/audio/music_lua_load.h"
+#include "asset/bind/misc/data_lua_load.h"
 
 #include "asset/bind/audio/sound_binder.hpp"
 #include "asset/bind/audio/music_binder.hpp"
@@ -256,6 +253,9 @@ static int lualoadfilebasepath(lua_State *L){
 #include "asset/bind/graphics/opengl/texture_binder_opengl.hpp"
 #include "asset/bind/graphics/opengl/glyph_binder_opengl.hpp"
 #include "asset/bind/graphics/opengl/font_binder_opengl.hpp"
+#include "asset/bind/graphics/opengl/texture_lua_load_opengl.h"
+#include "asset/bind/graphics/opengl/glyph_lua_load_opengl.h"
+#include "asset/bind/graphics/opengl/font_lua_load_opengl.h"
 
 static int luasetresolution(lua_State *L){
     if(!lua_isinteger(L, 1) | !lua_isinteger(L, 2)){
@@ -519,15 +519,15 @@ int main(int argc, char **argv){
 
     texture_binder_OpenGL texture_b(md, mdata.basepath, mdata.L);
     bindtexture(mdata.L, &texture_b,
-        Enj_Lua_TextureOnPreload,
-        Enj_Lua_TextureOnUnload,
-        Enj_Lua_TextureOnCanUnload);
+        Enj_Lua_TextureOnPreload_OpenGL,
+        Enj_Lua_TextureOnUnload_OpenGL,
+        Enj_Lua_TextureOnCanUnload_OpenGL);
 
     glyph_binder_OpenGL glyph_b(md, mdata.L);
     bindglyph(mdata.L, &glyph_b,
-        Enj_Lua_GlyphOnPreload,
-        Enj_Lua_GlyphOnUnload,
-        Enj_Lua_GlyphOnCanUnload);
+        Enj_Lua_GlyphOnPreload_OpenGL,
+        Enj_Lua_GlyphOnUnload_OpenGL,
+        Enj_Lua_GlyphOnCanUnload_OpenGL);
 
     sound_binder sound_b(md, mdata.basepath, mdata.L);
     bindsound(mdata.L, &sound_b,
@@ -543,9 +543,9 @@ int main(int argc, char **argv){
 
     font_binder_OpenGL font_b(md, mdata.basepath, mdata.L, texture_b, glyph_b);
     bindfont(mdata.L, &font_b,
-        Enj_Lua_FontOnPreload,
-        Enj_Lua_FontOnUnload,
-        Enj_Lua_FontOnCanUnload);
+        Enj_Lua_FontOnPreload_OpenGL,
+        Enj_Lua_FontOnUnload_OpenGL,
+        Enj_Lua_FontOnCanUnload_OpenGL);
 
     data_binder data_b(md, mdata.basepath, mdata.L);
     binddata(mdata.L, &data_b,

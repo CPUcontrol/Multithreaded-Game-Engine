@@ -32,7 +32,7 @@ int Enj_Lua_DataOnPreload(lua_State *L){
     {
         std::lock_guard<std::mutex> lock(ctx->dispatch.wq.mtx);
 
-        ctx->dispatch.wq.q.push([la, path = ctx->basepath + lua_tostring(L, 2), ctx](){
+        ctx->dispatch.wq.q.push([la, path = std::string(ctx->basepath) + lua_tostring(L, 2), ctx](){
             Enj_Instream ifile;
 
             if(Enj_InitInstreamFromFile(&ifile, path.c_str())){

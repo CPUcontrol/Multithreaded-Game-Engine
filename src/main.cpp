@@ -52,6 +52,7 @@
 #include "input/input.h"
 
 #include "appconfig.h"
+#include "embed_lua.h"
 
 static int luagetmousecoords(lua_State *L){
     int x;
@@ -133,111 +134,6 @@ static int luasetquit(lua_State *L){
     return 0;
 }
 
-static int lualoadpref(lua_State *L){
-    lua_settop(L, 1);
-    if(!lua_isstring(L, 1)){
-        return 0;
-    }
-    lua_pushvalue(L, lua_upvalueindex(1));
-    lua_pushvalue(L, 1);
-    lua_concat(L, 2);
-
-    FILE *f = fopen(lua_tostring(L, 2), "rb");
-    if(!f){
-        lua_pushliteral(L, "");
-        return 1;
-    }
-
-    fseek(f, 0, SEEK_END);
-    size_t sz = (size_t)ftell(f);
-    rewind(f);
-
-    char *buf = (char *)malloc(sz);
-    fread(buf, 1, sz, f);
-    lua_pushlstring(L, buf, sz);
-
-    free(buf);
-    fclose(f);
-
-    return 1;
-}
-
-static int luasavepref(lua_State *L){
-    lua_settop(L, 2);
-    if(!lua_isstring(L, 1) || !lua_isstring(L, 2)){
-        return 0;
-    }
-    lua_pushvalue(L, lua_upvalueindex(1));
-    lua_pushvalue(L, 1);
-    lua_concat(L, 2);
-    lua_pushvalue(L, 3);
-    lua_pushliteral(L, "~");
-    lua_concat(L, 2);
-
-    const char *dstfile = lua_tostring(L, 3);
-    const char *tmpfile = lua_tostring(L, 4);
-
-    FILE *f = fopen(tmpfile, "wb");
-    if(!f){
-        return 0;
-    }
-    size_t sz;
-    const char *data = lua_tolstring(L, 2, &sz);
-
-    fwrite(data, 1, sz, f);
-    fclose(f);
-
-    //Replace old destination file with temp file
-    remove(dstfile);
-    rename(tmpfile, dstfile);
-
-    return 0;
-}
-
-static int luasetlogfunction(lua_State *L){
-    lua_settop(L, 1);
-    lua_setfield(L, LUA_REGISTRYINDEX, "logfunction");
-    return 0;
-}
-
-static int luadofilebasepath_cont(lua_State *L, int status, lua_KContext ctx);
-static int luadofilebasepath(lua_State *L){
-    lua_settop(L, 1);
-    lua_pushvalue(L, lua_upvalueindex(1));
-    lua_rotate(L, 1, 1);
-
-    if(lua_isstring(L, 2)){
-        lua_pushvalue(L, lua_upvalueindex(2));
-        lua_pushvalue(L, 2);
-        lua_concat(L, 2);
-        lua_copy(L, 3, 2);
-        lua_pop(L, 1);
-    }
-
-    lua_callk(L, 1, LUA_MULTRET, 0, luadofilebasepath_cont);
-    return luadofilebasepath_cont(L, LUA_OK, 0);
-}
-static int luadofilebasepath_cont(lua_State *L, int status, lua_KContext ctx){
-    return lua_gettop(L);
-}
-
-static int lualoadfilebasepath(lua_State *L){
-    lua_settop(L, 3);
-    lua_pushvalue(L, lua_upvalueindex(1));
-    lua_rotate(L, 1, 1);
-
-    if(lua_isstring(L, 2)){
-        lua_pushvalue(L, lua_upvalueindex(2));
-        lua_pushvalue(L, 2);
-        lua_concat(L, 2);
-        lua_copy(L, 5, 2);
-        lua_pop(L, 1);
-    }
-
-    lua_call(L, 3, LUA_MULTRET);
-    return lua_gettop(L);
-}
-
 
 #define MAX_SPRITES (1<<14)
 
@@ -289,8 +185,8 @@ static int luasetresolution(lua_State *L){
 }
 
 typedef struct maindata{
-    std::string basepath;
-    std::string prefpath;
+    const char *basepath;
+    const char *prefpath;
 
     lua_State *L;
 
@@ -340,12 +236,10 @@ int main(int argc, char **argv){
     SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
 
     char *cwd = SDL_GetBasePath();
-    mdata.basepath = std::string(cwd);
-    SDL_free(cwd);
+    mdata.basepath = cwd;
 
     char *prefd = SDL_GetPrefPath(APP_COMPANY, APP_NAME);
-    mdata.prefpath = std::string(prefd);
-    SDL_free(prefd);
+    mdata.prefpath = prefd;
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -381,59 +275,7 @@ int main(int argc, char **argv){
 
     mdata.L = luaL_newstate();
 
-    luaL_requiref(mdata.L, "basic", luaopen_base, 0);
-    luaL_requiref(mdata.L, "math", luaopen_math, 0);
-    luaL_requiref(mdata.L, "string", luaopen_string, 0);
-    luaL_requiref(mdata.L, "table", luaopen_table, 0);
-    luaL_requiref(mdata.L, "utf8", luaopen_utf8, 0);
-    lua_settop(mdata.L, 0);
-
-    luaL_requiref(mdata.L, "package", luaopen_package, 0);
-    //Set module search path
-    lua_pushstring(mdata.L,
-    (
-        (mdata.basepath + "modules/?.lua")
-        + ';'
-        + (mdata.basepath + "modules/?.lc")
-    ).c_str());
-    lua_setfield(mdata.L, 1, "path");
-
-    //Delete c library loader + all-in-one loader
-    lua_getfield(mdata.L, 1, "searchers");
-    lua_pushnil(mdata.L);
-    lua_seti(mdata.L, 2, 4);
-    lua_pushnil(mdata.L);
-    lua_seti(mdata.L, 2, 3);
-
-    //Delete loadlib function
-    lua_pushnil(mdata.L);
-    lua_setfield(mdata.L, 1, "loadlib");
-    lua_settop(mdata.L, 0);
-
-
-    //Make dofile, loadfile work with base path
-    lua_getglobal(mdata.L, "dofile");
-    lua_pushstring(mdata.L, mdata.basepath.c_str());
-    lua_pushcclosure(mdata.L, luadofilebasepath, 2);
-    lua_setglobal(mdata.L, "dofile");
-
-    lua_getglobal(mdata.L, "loadfile");
-    lua_pushstring(mdata.L, mdata.basepath.c_str());
-    lua_pushcclosure(mdata.L, lualoadfilebasepath, 2);
-    lua_setglobal(mdata.L, "loadfile");
-
-    //Pref file functions with pref path
-    lua_pushstring(mdata.L, mdata.prefpath.c_str());
-    lua_pushcclosure(mdata.L, lualoadpref, 1);
-    lua_setglobal(mdata.L, "load_pref");
-
-    lua_pushstring(mdata.L, mdata.prefpath.c_str());
-    lua_pushcclosure(mdata.L, luasavepref, 1);
-    lua_setglobal(mdata.L, "save_pref");
-
-    lua_getglobal(mdata.L, "print");
-    lua_setfield(mdata.L, LUA_REGISTRYINDEX, "logfunction");
-    lua_register(mdata.L, "set_logger", luasetlogfunction);
+    embed_lua(mdata.L, cwd, prefd);
 
     //Fullscreen and resolution functions
     lua_pushlightuserdata(mdata.L, mdata.wind);
@@ -565,7 +407,7 @@ int main(int argc, char **argv){
 
     //Start main lua script
     lua_pushcfunction(mdata.L, Enj_Lua_StartThread);
-    if(luaL_loadfile(mdata.L, (mdata.basepath + "main.lua").c_str())){
+    if(luaL_loadfile(mdata.L, (std::string(mdata.basepath) + "main.lua").c_str())){
         printf("%s\n", lua_tostring(mdata.L, 2));
         lua_settop(mdata.L, 0);
     }
@@ -657,6 +499,9 @@ int main(int argc, char **argv){
     lua_close(mdata.L);
 
     SDL_DestroyWindow(mdata.wind);
+
+    SDL_free(prefd);
+    SDL_free(cwd);
 
     SDL_Quit();
     return ecode;

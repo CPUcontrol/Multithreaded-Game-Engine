@@ -42,7 +42,7 @@ int Enj_Lua_TextureOnPreload_OpenGL(lua_State *L){
     {
         std::lock_guard<std::mutex> lock(ctx->dispatch.wq.mtx);
 
-        ctx->dispatch.wq.q.push([la, e, path = ctx->basepath + lua_tostring(L, 2), ctx](){
+        ctx->dispatch.wq.q.push([la, e, path = std::string(ctx->basepath) + lua_tostring(L, 2), ctx](){
             Enj_PNGLoader png;
             Enj_Instream ifile;
 

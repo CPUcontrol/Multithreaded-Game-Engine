@@ -6,7 +6,7 @@
 
 music_binder::music_binder(
         multi_dispatch &md,
-        std::string &base,
+        const char *base,
         lua_State *L
 ): dispatch(md), basepath(base), Lmain(L)
 {

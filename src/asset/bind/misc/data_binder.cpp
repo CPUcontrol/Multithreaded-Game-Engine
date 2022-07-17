@@ -3,7 +3,7 @@
 
 data_binder::data_binder(
         multi_dispatch &md,
-        std::string &base,
+        const char *base,
         lua_State *L
 ): dispatch(md), basepath(base), Lmain(L)
 {

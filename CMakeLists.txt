@@ -55,6 +55,8 @@ set (CORE_SOURCE
     src/render/render_lua.c
 
     src/input/input.c
+
+    src/embed_lua.c
     )
 
 if (APP_RENDER_BACKEND STREQUAL "opengl")

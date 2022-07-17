@@ -3,7 +3,7 @@
 
 font_binder_OpenGL::font_binder_OpenGL(
         multi_dispatch &md,
-        std::string &base,
+        const char *base,
         lua_State *L,
         texture_binder_OpenGL &tb,
         glyph_binder_OpenGL &gb

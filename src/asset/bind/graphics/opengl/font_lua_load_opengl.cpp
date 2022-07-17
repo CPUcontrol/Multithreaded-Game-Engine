@@ -79,7 +79,7 @@ int Enj_Lua_FontOnPreload_OpenGL(lua_State *L){
         std::lock_guard<std::mutex> lock(ctx->dispatch.wq.mtx);
 
         ctx->dispatch.wq.q.push(
-        [la, path = ctx->basepath + lua_tostring(L, 2), fsize, ctx](){
+        [la, path = std::string(ctx->basepath) + lua_tostring(L, 2), fsize, ctx](){
 
             FT_Library ft;
             FT_Face face;
